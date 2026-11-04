@@ -90,9 +90,21 @@ Copy `server/.env.example` to `server/.env`. Everything is optional locally.
 | `AI_PROVIDER` | auto | `anthropic` or `openai` (any OpenAI-compatible API) |
 | `ANTHROPIC_API_KEY` | | Server-side only |
 | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | | Server-side only; the base URL lets you use Gemini/Groq/etc. OpenAI-compatible endpoints |
-| `AI_MODEL` | `claude-sonnet-5-5` / `gpt-4.1-mini` | Optional override |
+| `AI_MODEL` | `claude-sonnet-5-5` / `gpt-4.1-mini` | Optional override. A comma-separated list is tried in order when a model is busy (503/429) |
 | `UPLOAD_DIR` | `server/uploads` | Package photo uploads |
 | `VITE_API_URL` (client) | *(same origin)* | Only if the API is hosted separately |
+
+### AI Package Studio with Google Gemini
+
+```
+AI_PROVIDER=openai
+OPENAI_API_KEY=your-gemini-key
+OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+AI_MODEL=gemini-3.5-flash,gemini-flash-latest,gemini-flash-lite-latest
+```
+
+Gemini's free tier is sometimes overloaded, which is why a fallback list is useful.
+Older names such as `gemini-2.5-flash` are no longer available to new keys.
 
 ## Database setup
 
@@ -180,7 +192,7 @@ server/   Express 4 · Mongoose 8 · JWT (httpOnly cookie) · multer · helmet
 | 8 | Operator adds departure | ✅ API test |
 | 9 | Availability updates | ✅ API test (hold, release on reject/cancel) |
 | 10 | No overselling | ✅ API test (6 concurrent requests for 3 seats → exactly 3 succeed) |
-| 11 | AI Studio returns structured data with a key | ⚠️ **Not run**: no API key in the dev environment. Not-configured path and grounding logic are tested. |
+| 11 | AI Studio returns structured data with a key | ✅ verified with Google Gemini: sample caption → structured draft, with missing capacity/policy/pickup flagged, and saved as a draft from the UI |
 | 12 | Responsive on mobile | ✅ no horizontal overflow at 360px on all public and operator pages; mobile booking bar and filter drawer |
 | 13 | Production build | ✅ `npm run build`; `npm start` serves the SPA and deep links |
 | 14 | No critical runtime errors | ✅ no console errors in the tested flows |

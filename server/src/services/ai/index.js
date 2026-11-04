@@ -96,25 +96,51 @@ async function callAnthropic(cfg, text) {
   return block.input;
 }
 
+// Some OpenAI-compatible APIs (e.g. Gemini) wrap errors in an array.
+const providerError = (body) => (Array.isArray(body) ? body[0]?.error : body?.error) || {};
+
+function parseJsonContent(content) {
+  const s = String(content || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```$/, '');
+  try { return JSON.parse(s); } catch { throw new Error('AI provider returned invalid JSON'); }
+}
+
+// AI_MODEL may be a comma-separated list; overloaded models (503/429) fall through to the next.
 async function callOpenAI(cfg, text) {
-  const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.key}` },
-    body: JSON.stringify({
-      model: cfg.model,
+  const models = cfg.model.split(',').map((m) => m.trim()).filter(Boolean);
+  let lastErr;
+  for (const model of models) {
+    const payload = JSON.stringify({
+      model,
       response_format: { type: 'json_object' },
       temperature: 0,
       messages: [
         { role: 'system', content: `${systemPrompt()}\nRespond with a single JSON object matching this JSON Schema:\n${JSON.stringify(SCHEMA)}` },
         { role: 'user', content: `Extract the package from this post:\n\n"""${text}"""` },
       ],
-    }),
-    signal: AbortSignal.timeout(60000),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error?.message || `AI provider returned ${res.status}`);
-  const content = body.choices?.[0]?.message?.content;
-  try { return JSON.parse(content); } catch { throw new Error('AI provider returned invalid JSON'); }
+    });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.key}` },
+        body: payload,
+        signal: AbortSignal.timeout(60000),
+      });
+      // eslint-disable-next-line no-await-in-loop
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) {
+        cfg.usedModel = model;
+        return parseJsonContent(body.choices?.[0]?.message?.content);
+      }
+      const busy = res.status === 503 || res.status === 429;
+      lastErr = new Error(busy ? 'The AI provider is busy right now. Please try again in a minute.' : providerError(body).message || `AI provider returned ${res.status}`);
+      lastErr.statusCode = 502;
+      if (!busy) throw lastErr;
+      // eslint-disable-next-line no-await-in-loop
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 1200));
+    }
+  }
+  throw lastErr || new Error('AI provider did not respond');
 }
 
 const str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
@@ -201,7 +227,7 @@ async function extractPackage(text) {
     throw err;
   }
   const raw = cfg.provider === 'anthropic' ? await callAnthropic(cfg, text) : await callOpenAI(cfg, text);
-  return { ...normalise(raw || {}, text), provider: cfg.provider, model: cfg.model };
+  return { ...normalise(raw || {}, text), provider: cfg.provider, model: cfg.usedModel || cfg.model };
 }
 
 const status = () => {

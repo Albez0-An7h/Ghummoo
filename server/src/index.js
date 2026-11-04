@@ -21,9 +21,19 @@ async function start() {
     await seedIfEmpty();
   }
   const server = app.listen(PORT, '0.0.0.0', () => console.log(`[ghumo] listening on http://localhost:${PORT}`));
-  const shutdown = async () => { server.close(); await disconnectDB(); process.exit(0); };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  let closing = false;
+  const shutdown = (signal) => async () => {
+    if (closing) return;
+    closing = true;
+    server.close();
+    await disconnectDB().catch(() => {});
+    // nodemon's default restart signal: re-raise it so nodemon knows we're done.
+    if (signal === 'SIGUSR2') process.kill(process.pid, 'SIGUSR2');
+    else process.exit(0);
+  };
+  process.on('SIGINT', shutdown('SIGINT'));
+  process.on('SIGTERM', shutdown('SIGTERM'));
+  process.once('SIGUSR2', shutdown('SIGUSR2'));
 }
 
 start().catch((err) => {
