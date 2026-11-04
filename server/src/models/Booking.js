@@ -1,74 +1,45 @@
 const mongoose = require('mongoose');
 
+// Traveler is stored as a subdocument: a traveller only exists in the context of one booking.
+const travelerSchema = new mongoose.Schema({
+  fullName: { type: String, required: [true, 'Traveller name is required'], trim: true, maxlength: 100 },
+  age: { type: Number, min: 1, max: 110, required: [true, 'Traveller age is required'] },
+  gender: { type: String, enum: ['female', 'male', 'other', 'prefer_not'], default: 'prefer_not' },
+  phone: { type: String, trim: true, default: '' },
+  email: { type: String, trim: true, lowercase: true, default: '' },
+  idType: { type: String, trim: true, default: '' },
+  emergencyContact: { type: String, trim: true, default: '' },
+});
+
+const historySchema = new mongoose.Schema(
+  { status: String, note: String, by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, at: { type: Date, default: Date.now } },
+  { _id: false }
+);
+
 const bookingSchema = new mongoose.Schema(
   {
-    travelerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+    reference: { type: String, required: true, unique: true, index: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    operator: { type: mongoose.Schema.Types.ObjectId, ref: 'Operator', required: true, index: true },
+    package: { type: mongoose.Schema.Types.ObjectId, ref: 'TripPackage', required: true },
+    departure: { type: mongoose.Schema.Types.ObjectId, ref: 'TripDeparture', required: true, index: true },
+    seats: { type: Number, required: true, min: 1, max: 20 },
+    pricePerSeat: { type: Number, required: true },
+    totalAmount: { type: Number, required: true },
+    currency: { type: String, default: 'INR' },
+    travelers: { type: [travelerSchema], validate: [(v) => v.length > 0, 'At least one traveller is required'] },
+    contact: {
+      name: { type: String, trim: true, required: true },
+      email: { type: String, trim: true, lowercase: true, required: true },
+      phone: { type: String, trim: true, required: true },
     },
-    guideId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Guide',
-      required: true,
-    },
-    startDate: {
-      type: Date,
-      required: true,
-    },
-    endDate: {
-      type: Date,
-      required: true,
-    },
-    totalDays: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    totalAmount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'],
-      default: 'pending',
-    },
-    bookingMode: {
-      type: String,
-      enum: ['instant', 'request'],
-      required: true,
-    },
-    cancellationReason: {
-      type: String,
-      default: null,
-    },
-    fullRefund: {
-      type: Boolean,
-      default: null,
-    },
-    partialRefund: {
-      type: Boolean,
-      default: null,
-    },
-    confirmedAt: {
-      type: Date,
-      default: null,
-    },
-    completedAt: {
-      type: Date,
-      default: null,
-    },
-    cancelledAt: {
-      type: Date,
-      default: null,
-    },
+    specialRequests: { type: String, trim: true, maxlength: 1000, default: '' },
+    // requested → confirmed | rejected ; requested|confirmed → cancelled
+    status: { type: String, enum: ['requested', 'confirmed', 'rejected', 'cancelled'], default: 'requested', index: true },
+    operatorNote: { type: String, default: '' },
+    history: [historySchema],
   },
   { timestamps: true }
 );
-
-bookingSchema.index({ travelerId: 1, status: 1 });
-bookingSchema.index({ guideId: 1, status: 1 });
 
 module.exports = mongoose.model('Booking', bookingSchema);

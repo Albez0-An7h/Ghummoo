@@ -1,45 +1,17 @@
 const mongoose = require('mongoose');
-const mongoosePaginate = require('mongoose-paginate-v2');
 
+// Only travellers with a confirmed booking whose trip has ended may review. One per booking.
 const reviewSchema = new mongoose.Schema(
   {
-    bookingId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Booking',
-      required: true,
-      unique: true, // One review per booking enforced at DB level
-    },
-    travelerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    guideId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Guide',
-      required: true,
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: [1, 'Rating must be at least 1'],
-      max: [5, 'Rating cannot exceed 5'],
-    },
-    comment: {
-      type: String,
-      default: '',
-    },
-    isFlagged: {
-      type: Boolean,
-      default: false,
-    },
+    package: { type: mongoose.Schema.Types.ObjectId, ref: 'TripPackage', required: true, index: true },
+    operator: { type: mongoose.Schema.Types.ObjectId, ref: 'Operator', required: true, index: true },
+    booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true, unique: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    comment: { type: String, trim: true, maxlength: 2000, default: '' },
+    hidden: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
-
-// Compound index for efficient rating aggregation per guide
-reviewSchema.index({ guideId: 1, createdAt: -1 });
-
-reviewSchema.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('Review', reviewSchema);

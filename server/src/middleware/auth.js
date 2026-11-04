@@ -1,35 +1,35 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// SOLID - LSP: this middleware accepts any User subclass without breaking
-// (TravelerUser, GuideUser, AdminUser can all be used wherever User is expected)
-const verifyToken = async (req, res, next) => {
+function readToken(req) {
+  if (req.cookies && req.cookies.token) return req.cookies.token;
+  const h = req.headers.authorization;
+  if (h && h.startsWith('Bearer ')) return h.slice(7);
+  return null;
+}
+
+async function resolveUser(req) {
+  const token = readToken(req);
+  if (!token) return null;
   try {
-    let token;
-
-    // Support both cookie and Authorization header
-    if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
-
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
-    }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).lean();
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'User no longer exists' });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    return await User.findById(decoded.id).lean();
+  } catch {
+    return null;
   }
+}
+
+const verifyToken = async (req, res, next) => {
+  const user = await resolveUser(req);
+  if (!user) return res.status(401).json({ success: false, message: 'Please log in to continue' });
+  req.user = user;
+  return next();
 };
 
-module.exports = { verifyToken };
+// Attaches req.user when a valid token is present, but never blocks.
+const optionalAuth = async (req, res, next) => {
+  req.user = await resolveUser(req);
+  next();
+};
+
+module.exports = { verifyToken, optionalAuth };

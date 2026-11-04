@@ -30,3 +30,7 @@ npm-debug.log*
 
 # Temp uploads
 /tmp/
+
+.data/
+uploads/
+.cache/

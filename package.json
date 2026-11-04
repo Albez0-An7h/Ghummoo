@@ -1,14 +1,19 @@
 {
-  "name": "ghummoo",
-  "version": "2.0.0",
-  "description": "Local Guide Booking Platform",
+  "name": "ghumo-ai",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Ghumo AI: a group travel marketplace for independent travel organisers",
   "scripts": {
-    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "server:dev": "cd server && npm run dev",
-    "client:dev": "cd client && npm run dev",
-    "seed": "cd server && npm run seed",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+    "setup": "npm install && npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n api,web -c auto \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client",
+    "start": "node server/src/index.js",
+    "seed": "npm run seed --prefix server",
+    "test": "npm test --prefix server",
+    "lint": "npm run lint --prefix client",
+    "replit": "npm run setup && npm run build && npm start"
   },
+  "engines": { "node": ">=20.19" },
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
