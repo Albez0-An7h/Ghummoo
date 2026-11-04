@@ -177,7 +177,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" aria-label="Close" className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} />
+      <button type="button" aria-label="Close" data-cursor-passthrough className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} />
       <div className={cx('relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-lift animate-fade-up sm:rounded-3xl', size === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-lg')}>
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-white/95 px-6 py-4 backdrop-blur">
           <h2 className="text-lg font-bold">{title}</h2>

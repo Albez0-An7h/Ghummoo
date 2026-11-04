@@ -67,3 +67,15 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Flight cursor (components/FlightCursor.jsx). The class is only present on fine-pointer devices
+   with motion allowed, and only on public pages. Native cursors return on every control. */
+@layer base {
+  html.flight-cursor, html.flight-cursor * { cursor: none; }
+  html.flight-cursor :is(a, button, select, summary, label, [role="button"], [role="tab"], [role="radio"], [role="checkbox"], [data-native-cursor]),
+  html.flight-cursor :is(a, button, select, summary, label, [role="button"], [role="tab"], [role="radio"], [role="checkbox"], [data-native-cursor]) * { cursor: pointer; }
+  html.flight-cursor :is(input, textarea, [contenteditable="true"]) { cursor: text; }
+  html.flight-cursor :is(input[type="checkbox"], input[type="radio"], input[type="range"], input[type="file"], input[type="submit"], input[type="button"]) { cursor: pointer; }
+  html.flight-cursor :is(:disabled, [aria-disabled="true"]), html.flight-cursor :is(:disabled, [aria-disabled="true"]) * { cursor: not-allowed; }
+  html.flight-cursor [data-cursor-passthrough] { cursor: none; }
+}

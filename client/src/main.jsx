@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import { RequireRole } from './components/Guards';
 import { Spinner } from './components/ui';
 import HomePage from './pages/HomePage';
+import FlightCursor from './components/FlightCursor';
 
 const ExplorePage = lazy(() => import('./pages/ExplorePage'));
 const TripDetailPage = lazy(() => import('./pages/TripDetailPage'));
@@ -49,6 +50,8 @@ function PublicLayout() {
         <Suspense fallback={<div className="pt-24"><Spinner /></div>}><Outlet /></Suspense>
       </main>
       <Footer />
+      {/* Public traveller pages only; dashboards keep the standard cursor. */}
+      <FlightCursor />
     </>
   );
 }
