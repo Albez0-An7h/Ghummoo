@@ -32,7 +32,24 @@ const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads'
 fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir, { maxAge: '7d' }));
 
-app.get('/api/health', (req, res) => res.json({ success: true, data: { status: 'ok' } }));
+// Health reports database readiness so hosts and humans can see why the API isn't serving.
+app.get('/api/health', (req, res) => {
+  const db = req.app.locals.db;
+  const ok = !db || db.ready;
+  res.status(ok ? 200 : 503).json({ success: ok, data: { status: ok ? 'ok' : db.state, database: db ? (db.ready ? 'ready' : db.error || 'connecting') : 'ready' } });
+});
+
+// Until the database is connected, answer API calls immediately with a readable 503
+// rather than letting them hang. (Tests attach the DB before creating the app, so no state = ready.)
+app.use('/api', (req, res, next) => {
+  const db = req.app.locals.db;
+  if (!db || db.ready) return next();
+  return res.status(503).json({
+    success: false,
+    code: 'DB_UNAVAILABLE',
+    message: db.error ? `The server can't reach its database. ${db.error}` : 'The server is starting up. Please try again in a few seconds.',
+  });
+});
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/trips', require('./routes/trips'));
 app.use('/api/organisers', require('./routes/organisers'));

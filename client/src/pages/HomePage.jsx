@@ -4,7 +4,7 @@ import useAsync from '../lib/useAsync';
 import api from '../lib/api';
 import SearchPanel from '../components/SearchPanel';
 import Rail from '../components/Rail';
-import { Button, SafeImage } from '../components/ui';
+import { Button, SafeImage, Notice } from '../components/ui';
 import { money } from '../lib/format';
 
 const HERO = 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=1600&q=72&auto=format&fit=crop';
@@ -54,6 +54,13 @@ export default function HomePage() {
       </section>
 
       <div className="space-y-16 pt-6 sm:space-y-20">
+        {trips.error && (
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <Notice tone="warning" title="Trips couldn't be loaded" action={<Button variant="secondary" size="sm" onClick={() => { trips.reload(); meta.reload(); }}>Try again</Button>}>
+              {trips.error.message}
+            </Notice>
+          </div>
+        )}
         <Rail title="Popular trips" subtitle="Upcoming group departures, soonest first" items={items.slice(0, 10)} loading={loading} href="/trips" />
         <Rail title="Weekend getaways" subtitle="Leave Friday night, be back for Monday" items={by('weekend')} loading={loading} href="/trips?category=weekend" />
         <Rail title="Mountain escapes" subtitle="Himalayan valleys, high passes and pine forests" items={by('mountains')} loading={loading} href="/trips?category=mountains" />

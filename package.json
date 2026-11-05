@@ -4,7 +4,7 @@
   "private": true,
   "description": "Ghumo AI: a group travel marketplace for independent travel organisers",
   "scripts": {
-    "setup": "npm install && npm install --prefix server && npm install --prefix client",
+    "setup": "npm install --include=dev && npm install --prefix server && npm install --include=dev --prefix client",
     "dev": "concurrently -n api,web -c auto \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix client",
     "start": "node server/src/index.js",

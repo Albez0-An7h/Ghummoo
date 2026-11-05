@@ -1,0 +1,33 @@
+# Render Blueprint: one web service serves both the API and the built web app.
+# A single origin avoids cross-site cookie problems and the static-site rewrite rules.
+# Deploy: Render dashboard → New → Blueprint → pick this repo. Fill in the "sync: false" values.
+services:
+  - type: web
+    name: ghumo-ai
+    runtime: node
+    plan: free
+    buildCommand: npm run setup && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      # MongoDB Atlas connection string, e.g. mongodb+srv://USER:PASS@cluster.xxxx.mongodb.net/ghumo
+      - key: MONGODB_URI
+        sync: false
+      # Loads the demo trips into an empty database on first boot.
+      - key: SEED_ON_EMPTY
+        value: "true"
+      # AI Package Studio via Google Gemini's OpenAI-compatible API.
+      - key: AI_PROVIDER
+        value: openai
+      - key: OPENAI_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: AI_MODEL
+        value: gemini-3.5-flash,gemini-flash-latest,gemini-flash-lite-latest
+      - key: OPENAI_API_KEY
+        sync: false

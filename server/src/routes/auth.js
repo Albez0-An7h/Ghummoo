@@ -7,10 +7,19 @@ const { badRequest } = require('../utils/http');
 
 // `secure` follows the actual connection (trust proxy is on), so cookies work on plain-HTTP
 // localhost and are HTTPS-only behind Replit's or any other TLS proxy.
+//
+// When the web app is hosted on a different site from the API (e.g. two *.onrender.com
+// services, which browsers treat as separate sites), the cookie must be SameSite=None; Secure
+// or the browser won't send it with API requests.
+function isCrossSite(req) {
+  const origin = req.headers.origin;
+  if (!origin) return false;
+  try { return new URL(origin).host !== req.headers.host; } catch { return false; }
+}
 const cookieOpts = (req) => ({
   httpOnly: true,
   secure: req.secure,
-  sameSite: 'lax',
+  sameSite: isCrossSite(req) && req.secure ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 

@@ -131,6 +131,36 @@ deployment filesystems are ephemeral, so data resets on redeploy. Use Atlas for 
 > **Not yet verified:** the Replit deployment itself hasn't been tested from this environment.
 > The production build and `npm start` were tested locally (see below).
 
+## Deploying to Render
+
+**Recommended: one web service** (`render.yaml` is included). Express serves the API and the built
+web app from the same origin, so there are no CORS settings, cross-site cookie problems or
+static-site rewrite rules to configure.
+
+1. Render dashboard → **New → Blueprint** → select this repo.
+2. Fill in `MONGODB_URI` (MongoDB Atlas, with Network Access allowing `0.0.0.0/0`) and, for AI
+   Package Studio, `OPENAI_API_KEY` (your Gemini key). `JWT_SECRET` is generated for you.
+3. Deploy. The demo data loads automatically into the empty database.
+
+Or configure a web service manually: build `npm run setup && npm run build`, start `npm start`,
+health check `/api/health`, with the same environment variables. Don't set `VITE_API_URL`.
+
+### Troubleshooting: pages stuck on loading placeholders
+
+The web app is waiting for an API that never answers. Open `<api-url>/api/health`:
+
+- **It never responds:** the API process is crashing and Render keeps restarting it. Check the
+  service **Logs**. The usual cause is a `MONGODB_URI` pointing at a cluster that no longer exists
+  (the old Ghummoo cluster is gone).
+- **It returns 503 with a `database` message:** the server is up but can't reach MongoDB. The
+  message says why (wrong host, wrong password, or Atlas Network Access blocking Render).
+
+If you keep the **old split setup** (static site `ghummoo-client` + API `ghummoo-api`):
+- On the API, set `CLIENT_URL=https://ghummoo-client.onrender.com` (CORS) and a valid `MONGODB_URI`.
+- On the static site, add a **Rewrite** rule `/*` → `/index.html`, so links like `/trips` don't 404.
+- Logins rely on a cross-site cookie (`SameSite=None`), which Safari and strict tracking protection
+  block. The single-service setup doesn't have this problem.
+
 ---
 
 ## Architecture
