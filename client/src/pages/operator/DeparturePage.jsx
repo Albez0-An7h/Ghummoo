@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Download, Pencil, Pin, Trash2, Megaphone, Users, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Download, Pencil, Pin, Trash2, Megaphone, Users, CalendarDays, MessagesSquare } from 'lucide-react';
 import api from '../../lib/api';
 import useAsync from '../../lib/useAsync';
 import { money, dateRange, date, dateTime, toInputDate } from '../../lib/format';
@@ -128,6 +128,7 @@ export default function DeparturePage() {
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={() => setEditing(true)}><Pencil className="size-4" />Edit departure</Button>
             <Button variant="ghost" size="sm" to={`/operator/bookings?departure=${dep._id}`}>Bookings</Button>
+            <Button size="sm" to={`/operator/groups/${dep._id}`}><MessagesSquare className="size-4" />Trip group</Button>
           </div>
         </div>
         <div className="mt-5">

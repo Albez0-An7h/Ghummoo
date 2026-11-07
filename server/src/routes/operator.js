@@ -4,6 +4,7 @@ const {
 } = require('../models');
 const mongoose = require('mongoose');
 const { linkPackagePlaces } = require('../migrations/v0_1');
+const { ensureGroup } = require('../services/groups');
 const { verifyToken } = require('../middleware/auth');
 const { requireRole, loadOperator } = require('../middleware/roleGuard');
 const { asyncHandler } = require('../middleware/errorHandler');
@@ -535,6 +536,9 @@ router.post('/bookings/:id/confirm', loadOperator(), asyncHandler(async (req, re
   );
   if (!updated) throw conflict(`Only requested bookings can be confirmed (this one is ${b.status})`);
   await adjustConfirmedSeats(b.departure, b.seats);
+  // The departure's trip group exists from its first confirmed traveller.
+  const dep = await TripDeparture.findById(b.departure).lean();
+  if (dep) await ensureGroup(dep);
   res.json({ success: true, data: updated });
 }));
 

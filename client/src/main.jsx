@@ -41,6 +41,7 @@ const PackageStudio = lazy(() => import('./pages/operator/StudioPage'));
 const OperatorBookings = lazy(() => import('./pages/operator/BookingsPage'));
 const DepartureManifest = lazy(() => import('./pages/operator/DeparturePage'));
 const OperatorInsights = lazy(() => import('./pages/operator/InsightsPage'));
+const TripGroupPage = lazy(() => import('./pages/TripGroupPage'));
 
 const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
 // V0.1 design prototype (sample data only, no booking APIs).
@@ -93,6 +94,7 @@ function App() {
             <Route path="/trips/:slug" element={<TripDetailPage />} />
             <Route path="/trips/:slug/book" element={<RequireRole roles={['traveler']}><BookPage /></RequireRole>} />
             <Route path="/bookings/:id" element={<RequireRole><BookingPage /></RequireRole>} />
+            <Route path="/groups/:departureId" element={<RequireRole roles={['traveler']}><TripGroupPage /></RequireRole>} />
             <Route path="/me/trips" element={<RequireRole roles={['traveler']}><MyTripsPage /></RequireRole>} />
             <Route path="/destinations" element={<Navigate to="/india" replace />} />
             <Route path="/how-it-works" element={<HowItWorksPage />} />
@@ -112,6 +114,7 @@ function App() {
             <Route path="bookings" element={<OperatorBookings />} />
             <Route path="departures/:id" element={<DepartureManifest />} />
             <Route path="insights" element={<OperatorInsights />} />
+            <Route path="groups/:departureId" element={<TripGroupPage organiserView />} />
           </Route>
           <Route path="/v01/*" element={<V01App />} />
           <Route path="/admin/*" element={<RequireRole roles={['admin']}><AdminPage /></RequireRole>} />

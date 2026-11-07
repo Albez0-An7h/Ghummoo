@@ -102,6 +102,21 @@ Public "Verified" now requires `verifiedAt` **and** an approved profile (`servic
 
 Client: `/partners` (organiser landing page), step-by-step onboarding inside `/operator` until a profile exists, and `/operator/insights`.
 
+### Built in the trip-group milestone
+
+Every `/groups` route requires sign-in, and membership is re-checked on each request: the departure's organiser, or a traveller with a **confirmed** booking on that departure who hasn't left. Pending, declined and cancelled bookings get 403. V0.1 polls for new messages (no real-time transport).
+
+| Method and path | Who | Behaviour |
+| --- | --- | --- |
+| `GET /groups/mine` | traveller, organiser | Groups you can open, with unread counts; `unreadTotal` excludes muted groups |
+| `GET /groups/:departureId` | member | Trip, departure, organiser, members (first name + initial only), pinned trip updates, `me` |
+| `GET /groups/:departureId/messages` | member | History (`?before=` for older messages, `?after=` for polling) |
+| `POST /groups/:departureId/messages` | member | `{ body, kind? }`: 1–1000 characters; `announcement` is organiser-only; phone numbers, UPI IDs, card numbers and emails are rejected; 12 messages per minute per user |
+| `POST /groups/:departureId/read`, `/mute`, `/leave`, `/join` | member | Read position, mute, leave (travellers only) and rejoin (only while still confirmed) |
+| `POST /groups/:departureId/messages/:id/report` | member | Creates a `Report` (`targetType: 'message'`) for moderation |
+
+Models: `TripGroup` (one per departure, created at the first confirmation or on demand), `GroupMember` (per-user state only), `GroupMessage`. Client: `/groups/:departureId` for travellers and `/operator/groups/:departureId` for organisers.
+
 ### Planned for V0.1 (not built yet)
 
 | Method and path | Auth | Purpose | Milestone |

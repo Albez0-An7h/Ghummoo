@@ -14,4 +14,8 @@ module.exports = {
   Place: require('./Place'),
   // Organiser insights
   ListingView: require('./ListingView'),
+  // Trip groups
+  TripGroup: require('./TripGroup'),
+  GroupMember: require('./GroupMember'),
+  GroupMessage: require('./GroupMessage'),
 };

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { CheckCircle2, Copy, CalendarDays, MapPin, Phone, Mail, Megaphone, Lock, Pin, Star, ArrowLeft, Clock } from 'lucide-react';
+import { CheckCircle2, Copy, CalendarDays, MapPin, Phone, Mail, Megaphone, Lock, Pin, Star, ArrowLeft, Clock, Users } from 'lucide-react';
 import api from '../lib/api';
 import useAsync from '../lib/useAsync';
 import { useAuth } from '../lib/auth';
 import { Button, Badge, StatusBadge, SafeImage, Spinner, EmptyState, Notice, Modal, Textarea, cx } from '../components/ui';
 import { money, dateRange, date, dateTime, daysUntil } from '../lib/format';
 import BookingProgress from '../design/BookingProgress';
+import { getMyGroups } from '../lib/groups';
 
 const STATUS_COPY = {
   requested: ['Waiting for the organiser', 'Your seats are held. The organiser will review your request and contact you to confirm and arrange payment.'],
@@ -45,6 +46,7 @@ export default function BookingPage() {
   const { user } = useAuth();
   const booking = useAsync(() => api.get(`/bookings/${id}`), [id]);
   const board = useAsync(() => api.get(`/bookings/${id}/announcements`), [id]);
+  const groups = useAsync(getMyGroups, [id]);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -102,6 +104,20 @@ export default function BookingPage() {
           </Notice>
 
           <BookingProgress booking={b} />
+
+          {isOwner && b.status === 'confirmed' && (() => {
+            const g = groups.data?.items.find((x) => String(x.departureId) === String(dep._id));
+            return (
+              <section className="flex flex-col gap-3 rounded-3xl bg-ink p-5 text-white sm:flex-row sm:items-center sm:p-6">
+                <div className="min-w-0 flex-1">
+                  <h2 className="flex items-center gap-2 text-lg font-extrabold"><Users className="size-5 text-brand-soft" />Trip group</h2>
+                  <p className="mt-1 text-sm text-white/75">Chat with the organiser and the other confirmed travellers on this departure. Only first names are shown.</p>
+                </div>
+                {g ? <Button to={`/groups/${dep._id}`}>{g.unread ? `${g.unread} new message${g.unread > 1 ? 's' : ''}` : 'Open trip group'}</Button>
+                  : <Button variant="secondary" to={`/groups/${dep._id}`}>Rejoin trip group</Button>}
+              </section>
+            );
+          })()}
 
           {/* Trip updates board */}
           <section className="rounded-3xl border border-line bg-white p-5 sm:p-6">

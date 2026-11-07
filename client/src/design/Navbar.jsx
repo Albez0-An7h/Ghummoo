@@ -7,6 +7,7 @@ import { useAuth, homeFor } from '../lib/auth';
 import { Dialog, Drawer } from './Dialog';
 import SearchBox from './SearchBox';
 import { usePaths } from './context';
+import { getMyGroups } from '../lib/groups';
 
 /* Navbar: sticky and always usable, with search one tap away. `showAuth` adds sign-in and
    account links (live app); the prototype leaves them out. */
@@ -27,6 +28,20 @@ export default function Navbar({ showAuth = false }) {
   // Close overlays when the route changes (state adjusted during render, no effect needed).
   const [seenPath, setSeenPath] = useState(pathname);
   if (seenPath !== pathname) { setSeenPath(pathname); setMenu(false); setSearch(false); }
+  // Unread trip-group messages for travellers (muted groups excluded), refreshed on navigation.
+  const [unread, setUnread] = useState(0);
+  const traveller = showAuth && user?.role === 'traveler';
+  useEffect(() => {
+    if (!traveller) return undefined;
+    let live = true;
+    const load = () => getMyGroups().then((d) => { if (live) setUnread(d.unreadTotal); }).catch(() => {});
+    load();
+    const id = setInterval(load, 60000);
+    window.addEventListener('ghumo:groups-read', load);
+    return () => { live = false; clearInterval(id); window.removeEventListener('ghumo:groups-read', load); };
+  }, [traveller, pathname]);
+  const badge = traveller && unread > 0 ? <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[11px] font-extrabold text-white" aria-label={`${unread} unread trip group messages`}>{unread}</span> : null;
+
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 8);
     on();
@@ -58,7 +73,7 @@ export default function Navbar({ showAuth = false }) {
             <span className="hidden items-center gap-1.5 lg:flex">
               {account ? (
                 <>
-                  <Button size="sm" variant="soft" to={homeFor(user)}><AccountIcon className="size-4" />{accountLabel}</Button>
+                  <Button size="sm" variant="soft" to={homeFor(user)}><AccountIcon className="size-4" />{accountLabel}{badge}</Button>
                   <button type="button" onClick={signOut} className="grid size-9 place-items-center rounded-full text-subtle hover:bg-sand" aria-label="Log out" title="Log out"><LogOut className="size-[18px]" /></button>
                 </>
               ) : (
@@ -70,8 +85,9 @@ export default function Navbar({ showAuth = false }) {
             </span>
           )}
           {!showAuth && <span className="hidden lg:block"><Button size="sm" variant="dark" to="/partners">For organisers</Button></span>}
-          <button type="button" onClick={() => setMenu(true)} className="grid size-10 place-items-center rounded-full hover:bg-sand md:hidden" aria-label="Open menu" aria-expanded={menu}>
+          <button type="button" onClick={() => setMenu(true)} className="relative grid size-10 place-items-center rounded-full hover:bg-sand md:hidden" aria-label={unread && traveller ? `Open menu, ${unread} unread trip group messages` : 'Open menu'} aria-expanded={menu}>
             <Menu className="size-6" />
+            {badge && <span className="absolute right-1.5 top-1.5 size-2.5 rounded-full bg-brand" aria-hidden />}
           </button>
         </div>
       </div>
@@ -89,7 +105,7 @@ export default function Navbar({ showAuth = false }) {
             </NavLink>
           ))}
           <NavLink to={paths.cities} className="rounded-2xl px-4 py-3.5 text-[17px] font-extrabold hover:bg-sand">Cities</NavLink>
-          {account && <NavLink to={homeFor(user)} className="rounded-2xl px-4 py-3.5 text-[17px] font-extrabold hover:bg-sand">{accountLabel}</NavLink>}
+          {account && <NavLink to={homeFor(user)} className="rounded-2xl px-4 py-3.5 text-[17px] font-extrabold hover:bg-sand">{accountLabel}{badge}</NavLink>}
         </nav>
         <div className="mt-6 grid gap-2 border-t border-line pt-6">
           {showAuth && !user && <Button to="/login">Log in</Button>}
