@@ -98,7 +98,7 @@ export function Badge({ tone = 'neutral', icon: Icon, className, children }) {
 
 const STATUS = {
   requested: ['warning', 'Awaiting confirmation'], confirmed: ['success', 'Confirmed'], rejected: ['danger', 'Declined'], cancelled: ['neutral', 'Cancelled'],
-  draft: ['neutral', 'Draft'], published: ['success', 'Published'], unpublished: ['warning', 'Unpublished'], removed: ['danger', 'Removed'],
+  draft: ['neutral', 'Draft'], published: ['success', 'Published'], unpublished: ['warning', 'Unpublished'], archived: ['neutral', 'Archived'], removed: ['danger', 'Removed'],
   pending: ['warning', 'Pending review'], approved: ['success', 'Approved'],
   open: ['success', 'Open'], closed: ['neutral', 'Closed'],
   submitted: ['warning', 'Submitted'], verified: ['success', 'Verified'],

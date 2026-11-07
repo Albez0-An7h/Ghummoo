@@ -1,12 +1,15 @@
 const { Operator, TripPackage, TripDeparture, Review, Place, Landscape } = require('../models');
 
+// The public "Verified" badge needs both an admin-reviewed verification and listing approval.
+const isVerified = (op) => Boolean(op && op.verifiedAt && op.status === 'approved');
+
 const publicOperator = (op) => op && ({
   _id: op._id,
   businessName: op.businessName,
   slug: op.slug,
   location: op.location,
   logoUrl: op.logoUrl,
-  verified: Boolean(op.verifiedAt),
+  verified: isVerified(op),
   isDemo: op.isDemo,
 });
 
@@ -135,4 +138,4 @@ async function ratingSummary(packageId) {
   };
 }
 
-module.exports = { placeLookup, withPlaces, availabilityOf, publicOperator, presentCard, presentDeparture, isBookable, listCards, departuresByPackage, approvedOperatorMap, ratingSummary, upcomingFilter };
+module.exports = { isVerified, placeLookup, withPlaces, availabilityOf, publicOperator, presentCard, presentDeparture, isBookable, listCards, departuresByPackage, approvedOperatorMap, ratingSummary, upcomingFilter };

@@ -2,6 +2,7 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const { User, Operator } = require('../models');
 const { verifyToken, optionalAuth } = require('../middleware/auth');
+const { isVerified } = require('../services/trips');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { badRequest } = require('../utils/http');
 
@@ -29,7 +30,7 @@ async function profile(user) {
   const out = { _id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone, isDemo: user.isDemo };
   if (user.role === 'operator') {
     const op = await Operator.findOne({ owner: user._id }).lean();
-    out.operator = op ? { _id: op._id, businessName: op.businessName, slug: op.slug, status: op.status, verified: Boolean(op.verifiedAt) } : null;
+    out.operator = op ? { _id: op._id, businessName: op.businessName, slug: op.slug, status: op.status, verified: isVerified(op) } : null;
   }
   return out;
 }

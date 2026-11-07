@@ -12,4 +12,6 @@ module.exports = {
   // India content directory (editorial reference data)
   Landscape: require('./Landscape'),
   Place: require('./Place'),
+  // Organiser insights
+  ListingView: require('./ListingView'),
 };

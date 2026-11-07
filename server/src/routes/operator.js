@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const {
-  Operator, OperatorVerification, TripPackage, TripDeparture, Booking, PaymentRecord, TripAnnouncement, Place,
+  Operator, OperatorVerification, TripPackage, TripDeparture, Booking, PaymentRecord, TripAnnouncement, Place, ListingView,
 } = require('../models');
 const mongoose = require('mongoose');
 const { linkPackagePlaces } = require('../migrations/v0_1');
@@ -15,13 +15,16 @@ router.use(verifyToken, requireRole('operator'));
 
 /* ---------------------------- Profile & onboarding --------------------------- */
 
-const PROFILE_FIELDS = ['businessName', 'description', 'contactEmail', 'contactPhone', 'location', 'instagram', 'website', 'logoUrl', 'foundedYear'];
+const PROFILE_FIELDS = ['businessName', 'organiserType', 'description', 'contactEmail', 'contactPhone', 'location', 'instagram', 'website', 'logoUrl', 'foundedYear'];
+const ORGANISER_TYPES = ['independent', 'company', 'community', 'creator'];
 const pick = (src, fields) => Object.fromEntries(fields.filter((f) => src[f] !== undefined).map((f) => [f, src[f]]));
 
 function validateProfile(data, creating) {
   if (creating || data.businessName !== undefined) {
     if (!data.businessName || String(data.businessName).trim().length < 2) throw badRequest('Business name is required');
   }
+  if (data.organiserType !== undefined && data.organiserType !== null && !ORGANISER_TYPES.includes(data.organiserType)) throw badRequest('Choose what kind of organiser you are');
+  if (creating && !data.organiserType) throw badRequest('Choose what kind of organiser you are');
   if (creating) {
     if (!data.description || String(data.description).trim().length < 30) throw badRequest('Tell travellers about your business (at least 30 characters)');
     if (!data.contactPhone) throw badRequest('Contact phone is required');
@@ -80,6 +83,12 @@ router.get('/stats', loadOperator(), asyncHandler(async (req, res) => {
     TripDeparture.find({ operator: opId, status: { $ne: 'cancelled' }, startDate: { $gte: now } }).sort({ startDate: 1 }).limit(5).populate('package', 'title').lean(),
   ]);
   const by = Object.fromEntries(bookingsByStatus.map((b) => [b._id, b]));
+  const upcomingIds = await TripDeparture.find({ operator: opId, status: { $ne: 'cancelled' }, startDate: { $gte: now } }).distinct('_id');
+  const [travellers, archived, activity] = await Promise.all([
+    Booking.aggregate([{ $match: { operator: opId, status: 'confirmed', departure: { $in: upcomingIds } } }, { $group: { _id: null, seats: { $sum: '$seats' } } }]),
+    TripPackage.countDocuments({ operator: opId, status: 'archived' }),
+    recentActivity(opId),
+  ]);
   res.json({
     success: true,
     data: {
@@ -94,6 +103,71 @@ router.get('/stats', loadOperator(), asyncHandler(async (req, res) => {
       recordedPayments: payments.map((p) => ({ currency: p._id, total: p.total, count: p.count })),
       recentBookings: recent,
       nextDepartures: nextDeps,
+      archivedTrips: archived,
+      // Travellers on confirmed bookings for departures that haven't started yet.
+      confirmedTravellersUpcoming: travellers[0]?.seats || 0,
+      recentActivity: activity,
+    },
+  });
+}));
+
+/* Recent activity: real events only (booking status changes, recorded payments, announcements). */
+async function recentActivity(opId, limit = 10) {
+  const [bookings, payments, posts] = await Promise.all([
+    Booking.find({ operator: opId }).sort({ updatedAt: -1 }).limit(limit).select('reference seats history package').populate('package', 'title').lean(),
+    PaymentRecord.find({ operator: opId }).sort({ createdAt: -1 }).limit(limit).populate({ path: 'booking', select: 'reference package', populate: { path: 'package', select: 'title' } }).lean(),
+    TripAnnouncement.find({ operator: opId }).sort({ createdAt: -1 }).limit(limit).populate('package', 'title').lean(),
+  ]);
+  const events = [];
+  for (const b of bookings) {
+    for (const h of b.history || []) {
+      events.push({ kind: `booking_${h.status}`, at: h.at, bookingId: b._id, reference: b.reference, seats: b.seats, trip: b.package?.title || '' });
+    }
+  }
+  for (const p of payments) events.push({ kind: 'payment_recorded', at: p.createdAt, bookingId: p.booking?._id, reference: p.booking?.reference, amount: p.amount, currency: p.currency, method: p.method, trip: p.booking?.package?.title || '' });
+  for (const a of posts) events.push({ kind: 'announcement_posted', at: a.createdAt, departureId: a.departure, title: a.title, trip: a.package?.title || '' });
+  return events.filter((e) => e.at).sort((x, y) => new Date(y.at) - new Date(x.at)).slice(0, limit);
+}
+
+/* --------------------------------- Insights --------------------------------- */
+
+const istDay = (d) => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+
+// Only metrics backed by recorded events: public listing views, booking requests, confirmations
+// and departure occupancy. No revenue projections or conversion scores.
+router.get('/insights', loadOperator(), asyncHandler(async (req, res) => {
+  const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+  const opId = req.operator._id;
+  const since = new Date(Date.now() - days * 86400000);
+  const sinceDay = istDay(since);
+  const [pkgs, views, requests, confirmed, deps] = await Promise.all([
+    TripPackage.find({ operator: opId, status: { $ne: 'removed' } }, 'title slug status').lean(),
+    ListingView.aggregate([{ $match: { operator: opId, day: { $gte: sinceDay } } }, { $group: { _id: '$package', views: { $sum: '$count' } } }]),
+    Booking.aggregate([{ $match: { operator: opId, createdAt: { $gte: since } } }, { $group: { _id: '$package', count: { $sum: 1 } } }]),
+    Booking.aggregate([
+      { $match: { operator: opId } },
+      { $unwind: '$history' },
+      { $match: { 'history.status': 'confirmed', 'history.at': { $gte: since } } },
+      { $group: { _id: '$package', count: { $sum: 1 } } },
+    ]),
+    TripDeparture.find({ operator: opId, status: { $ne: 'cancelled' }, startDate: { $gte: new Date() } }).sort({ startDate: 1 }).limit(50).populate('package', 'title').lean(),
+  ]);
+  const m = (rows, key) => new Map(rows.map((r) => [String(r._id), r[key]]));
+  const vm = m(views, 'views'); const rm = m(requests, 'count'); const cm = m(confirmed, 'count');
+  const perPackage = pkgs.map((p) => ({ _id: p._id, title: p.title, slug: p.slug, status: p.status, views: vm.get(String(p._id)) || 0, requests: rm.get(String(p._id)) || 0, confirmed: cm.get(String(p._id)) || 0 }))
+    .sort((a, b) => b.views - a.views || b.requests - a.requests);
+  const sum = (k) => perPackage.reduce((t, p) => t + p[k], 0);
+  res.json({
+    success: true,
+    data: {
+      days,
+      totals: { views: sum('views'), requests: sum('requests'), confirmed: sum('confirmed') },
+      perPackage,
+      occupancy: deps.map((d) => {
+        const confirmedSeats = d.confirmedSeats || 0;
+        const held = Math.max(0, d.totalCapacity - d.seatsAvailable - confirmedSeats); // requested, awaiting you
+        return { _id: d._id, trip: d.package?.title, startDate: d.startDate, totalCapacity: d.totalCapacity, confirmedSeats, requestedSeats: held, seatsAvailable: d.seatsAvailable, status: d.status };
+      }),
     },
   });
 }));
@@ -223,6 +297,7 @@ router.put('/packages/:id', loadOperator(), asyncHandler(async (req, res) => {
 router.post('/packages/:id/publish', loadOperator(), asyncHandler(async (req, res) => {
   const pkg = await ownPackage(req);
   if (pkg.status === 'removed') throw forbidden('This listing was removed by moderators');
+  if (pkg.status === 'archived') throw conflict('Restore this package from the archive before publishing it');
   if (req.operator.status !== 'approved') throw forbidden('Your operator profile must be approved before you can publish trips');
   const active = await TripDeparture.countDocuments({ package: pkg._id, status: { $ne: 'cancelled' }, startDate: { $gte: new Date() } });
   const blockers = pkg.publishBlockers(active);
@@ -238,6 +313,36 @@ router.post('/packages/:id/unpublish', loadOperator(), asyncHandler(async (req, 
   pkg.status = 'unpublished';
   await pkg.save();
   res.json({ success: true, data: pkg });
+}));
+
+// Archive: hide a package you no longer run. Existing bookings are untouched.
+router.post('/packages/:id/archive', loadOperator(), asyncHandler(async (req, res) => {
+  const pkg = await ownPackage(req);
+  if (pkg.status === 'removed') throw forbidden('This listing was removed by moderators');
+  if (pkg.status === 'archived') throw conflict('Package is already archived');
+  pkg.status = 'archived';
+  await pkg.save();
+  res.json({ success: true, data: pkg });
+}));
+
+router.post('/packages/:id/restore', loadOperator(), asyncHandler(async (req, res) => {
+  const pkg = await ownPackage(req);
+  if (pkg.status !== 'archived') throw conflict('Only archived packages can be restored');
+  pkg.status = 'draft';
+  await pkg.save();
+  res.json({ success: true, data: pkg });
+}));
+
+// Duplicate: a new draft with the same content and no departures, bookings or history.
+const COPY_FIELDS = PKG_FIELDS.filter((f) => !['source', 'aiWarnings'].includes(f));
+router.post('/packages/:id/duplicate', loadOperator(), asyncHandler(async (req, res) => {
+  const pkg = await ownPackage(req);
+  if (pkg.status === 'removed') throw forbidden('This listing was removed by moderators');
+  const src = pkg.toObject();
+  const data = Object.fromEntries(COPY_FIELDS.filter((f) => src[f] !== undefined).map((f) => [f, src[f]]));
+  const title = `Copy of ${src.title}`.slice(0, 140);
+  const copy = await TripPackage.create({ ...data, title, operator: req.operator._id, slug: await uniqueSlug(TripPackage, title), status: 'draft', source: 'manual' });
+  res.status(201).json({ success: true, data: copy });
 }));
 
 router.delete('/packages/:id', loadOperator(), asyncHandler(async (req, res) => {

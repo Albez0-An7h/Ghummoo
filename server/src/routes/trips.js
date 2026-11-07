@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { TripPackage, TripDeparture, Operator, Place, Landscape } = require('../models');
+const { TripPackage, TripDeparture, Operator, Place, Landscape, ListingView } = require('../models');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { optionalAuth } = require('../middleware/auth');
 const { notFoundErr } = require('../utils/http');
@@ -124,6 +124,13 @@ router.get('/:slug', optionalAuth, asyncHandler(async (req, res) => {
   const isAdmin = req.user && req.user.role === 'admin';
   const isPublic = pkg.status === 'published' && operator && operator.status === 'approved';
   if (!isPublic && !isOwner && !isAdmin) throw notFoundErr('Trip not found');
+
+  // Organiser insights: one public page view. Owners, admins and obvious bots aren't counted.
+  // Fire-and-forget so a counting problem never breaks the page.
+  if (isPublic && !isOwner && !isAdmin && !/bot|crawl|spider|slurp|preview|monitor|lighthouse/i.test(req.get('user-agent') || '')) {
+    const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    ListingView.updateOne({ package: pkg._id, day }, { $inc: { count: 1 }, $setOnInsert: { operator: pkg.operator } }, { upsert: true }).catch(() => {});
+  }
 
   const deps = await TripDeparture.find({ package: pkg._id, status: { $ne: 'cancelled' }, startDate: { $gte: new Date() } }).sort({ startDate: 1 }).lean();
   const reviews = await ratingSummary(pkg._id);

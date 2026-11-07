@@ -46,7 +46,8 @@ const tripPackageSchema = new mongoose.Schema(
     pickupInfo: { type: String, trim: true, default: '' },
     cancellationPolicy: { type: String, trim: true, default: '' },
     groupSize: { type: String, trim: true, default: '' },
-    status: { type: String, enum: ['draft', 'published', 'unpublished', 'removed'], default: 'draft', index: true },
+    // archived: the organiser put it away (hidden, editable after restoring to draft).
+    status: { type: String, enum: ['draft', 'published', 'unpublished', 'archived', 'removed'], default: 'draft', index: true },
     removedReason: { type: String, default: '' },
     source: { type: String, enum: ['manual', 'ai'], default: 'manual' },
     aiWarnings: [{ type: String }],

@@ -4,7 +4,7 @@
    Anything that fails a check, and anything the listing doesn't cover, gets the fixed reply
    NOT_CONFIRMED. Without a key (or if the provider fails) a keyword matcher answers instead. */
 const { callStructured, getConfig } = require('../ai/provider');
-const { presentDeparture } = require('../trips');
+const { presentDeparture, isVerified } = require('../trips');
 const { istDay } = require('./prefs');
 
 const NOT_CONFIRMED = "This detail hasn't been confirmed by the organiser.";
@@ -46,7 +46,7 @@ function buildContext(pkg, departures, operator) {
       return { start: istDay(p.startDate), end: istDay(p.endDate), pricePerPerson: p.price, currency: pkg.currency, seatsLeft: p.seatsAvailable, availability: p.availability };
     }),
     group_size: pkg.groupSize || '',
-    organiser: operator ? { name: operator.businessName, location: operator.location, about: operator.description, foundedYear: operator.foundedYear, verifiedByGhumo: Boolean(operator.verifiedAt) } : {},
+    organiser: operator ? { name: operator.businessName, location: operator.location, about: operator.description, foundedYear: operator.foundedYear, verifiedByGhumo: isVerified(operator) } : {},
   };
 }
 

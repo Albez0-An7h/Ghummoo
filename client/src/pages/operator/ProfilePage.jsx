@@ -5,8 +5,9 @@ import { Upload, ShieldCheck, Building2, ExternalLink } from 'lucide-react';
 import api from '../../lib/api';
 import { date } from '../../lib/format';
 import { Button, Input, Textarea, Select, Field, Card, Notice, PageHeader, StatusBadge, SafeImage } from '../../components/ui';
+import Onboarding, { ORGANISER_TYPES } from './Onboarding';
 
-const EMPTY = { businessName: '', description: '', contactEmail: '', contactPhone: '', location: '', instagram: '', website: '', logoUrl: '', foundedYear: '' };
+const EMPTY = { businessName: '', organiserType: '', description: '', contactEmail: '', contactPhone: '', location: '', instagram: '', website: '', logoUrl: '', foundedYear: '' };
 
 function validate(f) {
   const e = {};
@@ -23,7 +24,7 @@ function validate(f) {
   return e;
 }
 
-function LogoPicker({ value, onChange }) {
+export function LogoPicker({ value, onChange }) {
   const input = useRef(null);
   const [uploading, setUploading] = useState(false);
   const upload = async (file) => {
@@ -63,7 +64,11 @@ function LogoPicker({ value, onChange }) {
 function ProfileFields({ form, set, errors }) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
-      <Input label="Business name" required value={form.businessName} onChange={set('businessName')} error={errors.businessName} className="sm:col-span-2" placeholder="e.g. Wandering Pahadi Co." />
+      <Input label="Business name" required value={form.businessName} onChange={set('businessName')} error={errors.businessName} placeholder="e.g. Wandering Pahadi Co." />
+      <Select label="Organiser type" value={form.organiserType || ''} onChange={set('organiserType')}>
+        <option value="">Choose…</option>
+        {ORGANISER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+      </Select>
       <Textarea label="About your business" required rows={5} value={form.description} onChange={set('description')} error={errors.description} className="sm:col-span-2"
         hint="What kind of trips you run, how long you've been operating, what makes your trips different." />
       <Input label="Contact email" type="email" required value={form.contactEmail} onChange={set('contactEmail')} error={errors.contactEmail} />
@@ -82,44 +87,11 @@ function useProfileForm(initial) {
   const [errors, setErrors] = useState({});
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrors((x) => ({ ...x, [k]: undefined })); };
   const check = () => { const e = validate(form); setErrors(e); return Object.keys(e).length === 0; };
-  const payload = () => ({ ...form, foundedYear: form.foundedYear === '' ? '' : Number(form.foundedYear) });
+  const payload = () => ({ ...form, organiserType: form.organiserType || undefined, foundedYear: form.foundedYear === '' ? '' : Number(form.foundedYear) });
   return { form, set, errors, check, payload };
 }
 
-export function OnboardingForm({ onCreated }) {
-  const f = useProfileForm();
-  const [saving, setSaving] = useState(false);
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!f.check()) { toast.error('Please fix the highlighted fields'); return; }
-    setSaving(true);
-    try {
-      await api.post('/operator/profile', f.payload());
-      toast.success('Profile submitted for review');
-      await onCreated?.();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-  return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader eyebrow="Welcome to Ghumo AI" title="Set up your operator profile">
-        Travellers see this on every trip you list. Our team reviews new operators before their trips go live, usually within a day.
-      </PageHeader>
-      <form onSubmit={submit} noValidate>
-        <Card className="mt-6 p-5 sm:p-7"><ProfileFields form={f.form} set={f.set} errors={f.errors} /></Card>
-        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[13px] text-subtle">You can start creating draft packages straight after submitting.</p>
-          <Button type="submit" loading={saving}>Submit for review</Button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-const REG_TYPES = [['gst', 'GST registration'], ['msme', 'MSME / Udyam'], ['company', 'Company / LLP registration'], ['tourism_license', 'State tourism licence'], ['other', 'Other']];
+export const REG_TYPES = [['gst', 'GST registration'], ['msme', 'MSME / Udyam'], ['company', 'Company / LLP registration'], ['tourism_license', 'State tourism licence'], ['other', 'Other']];
 
 function VerificationCard({ verification, onSubmitted }) {
   const [form, setForm] = useState({ registrationType: 'gst', registrationNumber: '', legalName: '', documentUrl: '', notes: '' });
@@ -203,7 +175,10 @@ function EditProfile({ operator, verification, reloadOperator }) {
       <Card className="flex flex-wrap items-center gap-3 p-5">
         <span className="text-sm font-bold">Listing approval</span>
         <StatusBadge status={operator.status} />
-        {operator.verifiedAt ? <StatusBadge status="verified" label="Verified organiser" /> : <span className="text-[13px] text-subtle">Not verified yet</span>}
+        <span className="text-sm font-bold">Verification</span>
+        {operator.verifiedAt && operator.status === 'approved' ? <StatusBadge status="verified" label="Verified organiser" />
+          : operator.verifiedAt ? <span className="text-[13px] text-subtle">Documents checked. The badge appears once your profile is approved.</span>
+            : verification ? <StatusBadge status={verification.status} /> : <span className="text-[13px] text-subtle">Not submitted</span>}
         {operator.statusNote && <p className="w-full text-[14px] text-subtle">Note from Ghumo: {operator.statusNote}</p>}
       </Card>
       {operator.status === 'rejected' && <Notice tone="danger">Saving changes sends your profile back to the review queue.</Notice>}
@@ -218,7 +193,7 @@ function EditProfile({ operator, verification, reloadOperator }) {
 
 export default function ProfilePage() {
   const { operator, verification, reloadOperator } = useOutletContext();
-  if (!operator) return <OnboardingForm onCreated={reloadOperator} />;
+  if (!operator) return <Onboarding onCreated={reloadOperator} />;
   return <EditProfile key={operator.updatedAt} operator={operator} verification={verification} reloadOperator={reloadOperator} />;
 }
 

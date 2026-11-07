@@ -40,6 +40,7 @@ const PackageEditor = lazy(() => import('./pages/operator/PackageEditorPage'));
 const PackageStudio = lazy(() => import('./pages/operator/StudioPage'));
 const OperatorBookings = lazy(() => import('./pages/operator/BookingsPage'));
 const DepartureManifest = lazy(() => import('./pages/operator/DeparturePage'));
+const OperatorInsights = lazy(() => import('./pages/operator/InsightsPage'));
 
 const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
 // V0.1 design prototype (sample data only, no booking APIs).
@@ -110,6 +111,7 @@ function App() {
             <Route path="studio" element={<PackageStudio />} />
             <Route path="bookings" element={<OperatorBookings />} />
             <Route path="departures/:id" element={<DepartureManifest />} />
+            <Route path="insights" element={<OperatorInsights />} />
           </Route>
           <Route path="/v01/*" element={<V01App />} />
           <Route path="/admin/*" element={<RequireRole roles={['admin']}><AdminPage /></RequireRole>} />

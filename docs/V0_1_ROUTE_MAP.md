@@ -88,6 +88,20 @@ The client routes `/`, `/india`, `/cities`, `/places/:slug`, `/trips`, `/trips/:
 
 These replace the planned `POST /ai/match` and `POST /ai/trips/:slug/ask`. The operator-only `/ai/status` and `/ai/extract-package` are unchanged; Package Studio now shares the provider layer (`services/ai/provider.js`).
 
+### Built in the organiser milestone
+
+| Method and path | Auth | Behaviour |
+| --- | --- | --- |
+| `POST`/`PUT /operator/profile` | operator | **Additive:** `organiserType` (`independent`, `company`, `community` or `creator`), required when the profile is created |
+| `POST /operator/packages/:id/archive`, `.../restore` | operator (owner) | Archive hides a package without touching its bookings; restore brings it back as a draft |
+| `POST /operator/packages/:id/duplicate` | operator (owner) | New draft with the same content and no departures, bookings or history |
+| `GET /operator/stats` | operator | **Additive:** `archivedTrips`, `confirmedTravellersUpcoming`, and `recentActivity` (booking status changes, recorded payments, trip updates) |
+| `GET /operator/insights?days=7,30,90` | operator | Listing views (`ListingView`, public visits only), booking requests, confirmations, and per-departure occupancy |
+
+Public "Verified" now requires `verifiedAt` **and** an approved profile (`services/trips.js#isVerified`). `GET /trips/:slug` counts one view per public visit; owners, admins and known bots are excluded.
+
+Client: `/partners` (organiser landing page), step-by-step onboarding inside `/operator` until a profile exists, and `/operator/insights`.
+
 ### Planned for V0.1 (not built yet)
 
 | Method and path | Auth | Purpose | Milestone |
