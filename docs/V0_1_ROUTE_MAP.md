@@ -77,6 +77,17 @@ Responses from `/india/*` are sent with `Cache-Control: public, max-age=300`.
 
 The client routes `/`, `/india`, `/cities`, `/places/:slug`, `/trips`, `/trips/:slug`, `/compare` and `/decide` are live and use these APIs. `/destinations` redirects to `/india`. The sample-data prototype stays at `/v01`.
 
+### Built in the AI-discovery milestone
+
+| Method and path | Auth | Behaviour |
+| --- | --- | --- |
+| `GET /discover/status` | public | `{ ai }`: whether a provider key is configured |
+| `POST /discover/interpret` | public, rate-limited | `{ text }` → `{ prefs, summary, ambiguities, mode: 'ai' or 'basic', notice? }`. AI output is grounded in the user's words, and the rule-based parser is the fallback |
+| `POST /discover/search` | public, rate-limited | `{ prefs }` → `{ summary, results, alternatives, explanation }`. Deterministic: hard filters (budget, departure city, dates, duration, published status, open seats) over live inventory, then soft ranking. **No AI call** |
+| `POST /discover/trips/:slug/ask` | public (owners and admins on previews), rate-limited | `{ question }` → `{ answered, answer, sources[{key, label, anchor}], mode }`. Answers come from listing fields only and are checked on the server; otherwise the reply is "This detail hasn't been confirmed by the organiser." |
+
+These replace the planned `POST /ai/match` and `POST /ai/trips/:slug/ask`. The operator-only `/ai/status` and `/ai/extract-package` are unchanged; Package Studio now shares the provider layer (`services/ai/provider.js`).
+
 ### Planned for V0.1 (not built yet)
 
 | Method and path | Auth | Purpose | Milestone |

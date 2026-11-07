@@ -54,6 +54,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/trips', require('./routes/trips'));
 app.use('/api/india', require('./routes/india'));
 app.use('/api/saved', require('./routes/saved'));
+app.use('/api/discover', require('./routes/discover'));
 app.use('/api/organisers', require('./routes/organisers'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/operator', require('./routes/operator'));

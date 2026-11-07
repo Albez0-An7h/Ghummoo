@@ -1,4 +1,5 @@
 // AI Package Studio: turns an unstructured social-media caption into a structured trip draft.
+const { callStructured, status } = require('./provider');
 // Runs server-side only. Provider is chosen with environment variables:
 //   AI_PROVIDER=anthropic (default when ANTHROPIC_API_KEY is set) | openai (any OpenAI-compatible API)
 //   ANTHROPIC_API_KEY / OPENAI_API_KEY, AI_MODEL, OPENAI_BASE_URL
@@ -57,90 +58,6 @@ STRICT RULES:
 - Price is per person unless the text says otherwise; if unclear add a warning.
 - Title may be phrased nicely but must only reference stated places.
 - warnings: list every assumption you made and every ambiguity. Be concise.`;
-}
-
-function getConfig() {
-  const provider = (process.env.AI_PROVIDER || (process.env.ANTHROPIC_API_KEY ? 'anthropic' : process.env.OPENAI_API_KEY ? 'openai' : '')).toLowerCase();
-  if (provider === 'anthropic' && process.env.ANTHROPIC_API_KEY) {
-    return { provider, model: process.env.AI_MODEL || 'claude-sonnet-5-5', key: process.env.ANTHROPIC_API_KEY };
-  }
-  if (provider === 'openai' && process.env.OPENAI_API_KEY) {
-    return {
-      provider,
-      model: process.env.AI_MODEL || 'gpt-4.1-mini',
-      key: process.env.OPENAI_API_KEY,
-      baseUrl: (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, ''),
-    };
-  }
-  return null;
-}
-
-async function callAnthropic(cfg, text) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': cfg.key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({
-      model: cfg.model,
-      max_tokens: 4000,
-      system: systemPrompt(),
-      tools: [{ name: 'record_package', description: 'Record the extracted package', input_schema: SCHEMA }],
-      tool_choice: { type: 'tool', name: 'record_package' },
-      messages: [{ role: 'user', content: `Extract the package from this post:\n\n"""${text}"""` }],
-    }),
-    signal: AbortSignal.timeout(60000),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error?.message || `AI provider returned ${res.status}`);
-  const block = (body.content || []).find((c) => c.type === 'tool_use');
-  if (!block) throw new Error('AI provider returned no structured output');
-  return block.input;
-}
-
-// Some OpenAI-compatible APIs (e.g. Gemini) wrap errors in an array.
-const providerError = (body) => (Array.isArray(body) ? body[0]?.error : body?.error) || {};
-
-function parseJsonContent(content) {
-  const s = String(content || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```$/, '');
-  try { return JSON.parse(s); } catch { throw new Error('AI provider returned invalid JSON'); }
-}
-
-// AI_MODEL may be a comma-separated list; overloaded models (503/429) fall through to the next.
-async function callOpenAI(cfg, text) {
-  const models = cfg.model.split(',').map((m) => m.trim()).filter(Boolean);
-  let lastErr;
-  for (const model of models) {
-    const payload = JSON.stringify({
-      model,
-      response_format: { type: 'json_object' },
-      temperature: 0,
-      messages: [
-        { role: 'system', content: `${systemPrompt()}\nRespond with a single JSON object matching this JSON Schema:\n${JSON.stringify(SCHEMA)}` },
-        { role: 'user', content: `Extract the package from this post:\n\n"""${text}"""` },
-      ],
-    });
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.key}` },
-        body: payload,
-        signal: AbortSignal.timeout(60000),
-      });
-      // eslint-disable-next-line no-await-in-loop
-      const body = await res.json().catch(() => ({}));
-      if (res.ok) {
-        cfg.usedModel = model;
-        return parseJsonContent(body.choices?.[0]?.message?.content);
-      }
-      const busy = res.status === 503 || res.status === 429;
-      lastErr = new Error(busy ? 'The AI provider is busy right now. Please try again in a minute.' : providerError(body).message || `AI provider returned ${res.status}`);
-      lastErr.statusCode = 502;
-      if (!busy) throw lastErr;
-      // eslint-disable-next-line no-await-in-loop
-      if (attempt === 0) await new Promise((r) => setTimeout(r, 1200));
-    }
-  }
-  throw lastErr || new Error('AI provider did not respond');
 }
 
 const str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
@@ -219,20 +136,16 @@ function normalise(raw, text) {
 }
 
 async function extractPackage(text) {
-  const cfg = getConfig();
-  if (!cfg) {
-    const err = new Error('AI is not configured on this server');
-    err.statusCode = 503;
-    err.details = { code: 'AI_NOT_CONFIGURED' };
-    throw err;
-  }
-  const raw = cfg.provider === 'anthropic' ? await callAnthropic(cfg, text) : await callOpenAI(cfg, text);
-  return { ...normalise(raw || {}, text), provider: cfg.provider, model: cfg.usedModel || cfg.model };
+  const { data, provider, model } = await callStructured({
+    system: systemPrompt(),
+    user: `Extract the package from this post:\n\n"""${text}"""`,
+    schema: SCHEMA,
+    name: 'record_package',
+    maxTokens: 4000,
+    timeoutMs: 60000,
+    strict: false,
+  });
+  return { ...normalise(data || {}, text), provider, model };
 }
-
-const status = () => {
-  const cfg = getConfig();
-  return cfg ? { configured: true, provider: cfg.provider, model: cfg.model } : { configured: false };
-};
 
 module.exports = { extractPackage, status, normalise };

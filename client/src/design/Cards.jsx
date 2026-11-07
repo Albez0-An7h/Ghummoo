@@ -30,7 +30,7 @@ const cityNames = (trip) => (trip.places?.departureCities?.length ? trip.places.
 
 /* TripCard: the information needed to decide is always visible: where, who runs it, from
    where and when, how long, price, and seats from the real inventory. */
-export function TripCard({ trip, className, showCompare = true, reason }) {
+export function TripCard({ trip, className, showCompare = true, reason, caveats, difference }) {
   const paths = usePaths();
   const next = trip.nextDeparture;
   const firstPlace = trip.places?.destinations?.[0];
@@ -62,12 +62,22 @@ export function TripCard({ trip, className, showCompare = true, reason }) {
           {trip.operator?.verified && <BadgeCheck className="size-4 text-success" aria-label="Verified organiser" />}
           {from && <span>· from {from}</span>}
         </p>
-        {reason && <ul className="relative z-10 mt-3 space-y-1 rounded-2xl bg-peach/50 p-3 text-[13px] font-semibold text-ink/85">{reason.map((r) => <li key={r}>• {r}</li>)}</ul>}
+        {difference && <p className="relative z-10 mt-3 rounded-2xl bg-warning-bg p-3 text-[13px] font-bold text-warning">{difference}</p>}
+        {reason && (
+          <div className="relative z-10 mt-3 rounded-2xl bg-peach/50 p-3 text-[13px]">
+            <p className="font-extrabold text-brand-ink">Why it matches</p>
+            <ul className="mt-1 space-y-1 font-semibold text-ink/85">{reason.map((r) => <li key={r}>• {r}</li>)}</ul>
+          </div>
+        )}
+        {caveats?.length > 0 && <ul className="relative z-10 mt-2 space-y-0.5 text-[13px] text-subtle">{caveats.map((c) => <li key={c}>– {c}</li>)}</ul>}
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px] font-semibold">
           {next ? <span className="flex items-center gap-1"><CalendarDays className="size-3.5 text-brand" aria-hidden />Next {shortDate(next.startDate)}{trip.departureCount > 1 && <span className="font-medium text-subtle"> +{trip.departureCount - 1} more</span>}</span> : null}
           <AvailabilityBadge departure={next} />
         </div>
-        <div className="mt-auto pt-4"><PriceLabel amount={trip.priceFrom} currency={trip.currency} /></div>
+        <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+          <PriceLabel amount={trip.priceFrom} currency={trip.currency} />
+          {reason && <span className="text-sm font-extrabold text-brand-ink" aria-hidden>View details →</span>}
+        </div>
       </div>
     </article>
   );

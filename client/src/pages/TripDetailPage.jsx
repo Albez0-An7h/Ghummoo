@@ -14,7 +14,7 @@ import { CompareToggle } from '../design/Compare';
 import { AvailabilityBadge } from '../design/Booking';
 import { AIInput } from '../design/Inputs';
 import { DemoBadge } from '../design/Feedback';
-import { answerFromTrip } from '../lib/discovery';
+import { askTripQuestion } from '../lib/discover';
 import { money, dateRange, durationLong, date, weekdayDate, CATEGORY_LABELS } from '../lib/format';
 
 function Section({ id, title, children, className }) {
@@ -125,25 +125,46 @@ function BookingPanel({ trip, departureId, setDepartureId, seats, setSeats, onBo
   );
 }
 
-/* "Ask this trip": answers only from this listing's own fields (lib/discovery.js). When the
-   organiser hasn't said, it says so and points to their contact details. */
+/* "Ask this trip": answered on the server from this listing only (AI when configured, keyword
+   matching otherwise). Answers cite the listing section they came from; anything the listing
+   doesn't cover gets "This detail hasn't been confirmed by the organiser." */
 function AskThisTrip({ trip }) {
   const [qa, setQa] = useState([]);
-  const ask = (q) => setQa((cur) => [{ q, ...answerFromTrip(trip, q) }, ...cur].slice(0, 4));
+  const [busy, setBusy] = useState(false);
+  const ask = async (q) => {
+    setBusy(true);
+    try {
+      const r = await askTripQuestion(trip.slug, q);
+      setQa((cur) => [{ q, ...r }, ...cur].slice(0, 5));
+    } catch (e) {
+      setQa((cur) => [{ q, error: e.status === 429 ? 'You\'ve asked a lot of questions in a short time. Please wait a minute and try again.' : e.message }, ...cur].slice(0, 5));
+    } finally { setBusy(false); }
+  };
   return (
     <section id="ask" aria-labelledby="ask-h" className="mt-10 scroll-mt-28 rounded-[28px] bg-gradient-to-br from-peach/70 to-white p-5 ring-1 ring-line sm:p-6">
       <h2 id="ask-h" className="text-xl font-extrabold sm:text-2xl">Ask this trip</h2>
-      <p className="mt-1 text-sm text-subtle">Answers come only from this listing. If the organiser hasn't said, we'll tell you.</p>
-      <AIInput className="mt-4" label="Your question" placeholder="Is food included? Where is pickup?" onSubmit={ask}
+      <p className="mt-1 text-sm text-subtle">Answers come only from this listing and the organiser's details. If the organiser hasn't said, we'll tell you.</p>
+      <AIInput className="mt-4" label="Your question" placeholder="Is food included? Where is pickup?" onSubmit={ask} busy={busy}
         suggestions={['Which meals are included?', 'Where is the pickup point?', 'What is the cancellation policy?', 'What is not included?']}
-        note="Matched to the listing's own details. No guesses." buttonLabel="Ask" />
+        note="We never guess safety, availability, meals, transport, stays or refunds." buttonLabel="Ask" />
       <div aria-live="polite" className="mt-4 space-y-3">
+        {busy && <div className="h-16 animate-pulse rounded-2xl bg-white/70 motion-reduce:animate-none" aria-hidden />}
         {qa.map((r, i) => (
           <div key={`${r.q}-${i}`} className="rounded-2xl bg-white p-4 ring-1 ring-line">
             <p className="text-sm font-extrabold">{r.q}</p>
-            <p className={cx('mt-1.5 text-[15px]', r.answered ? 'text-ink' : 'italic text-subtle')}>{r.answer}</p>
-            {r.sources.length > 0 && <p className="mt-2 text-xs font-bold text-brand-ink">From the listing: {r.sources.join(', ')}</p>}
-            {!r.answered && <a href="#organiser" className="mt-2 inline-block text-xs font-bold text-brand-ink underline">Contact the organiser</a>}
+            {r.error ? <p className="mt-1.5 text-[15px] text-danger">{r.error}</p> : (
+              <>
+                <p className={cx('mt-1.5 text-[15px]', r.answered ? 'text-ink' : 'italic text-subtle')}>{r.answer}</p>
+                {r.sources?.length > 0 && (
+                  <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-bold text-subtle">From the listing:
+                    {r.sources.map((s) => <a key={s.key} href={`#${s.anchor}`} className="rounded-full bg-peach px-2 py-0.5 text-brand-ink hover:underline">{s.label}</a>)}
+                  </p>
+                )}
+                {!r.answered && <a href="#organiser" className="mt-2 inline-block text-xs font-bold text-brand-ink underline">Ask the organiser directly</a>}
+                {r.notice && <p className="mt-2 text-xs text-subtle">{r.notice}</p>}
+                {r.mode === 'basic' && !r.notice && <p className="mt-2 text-xs text-subtle">Matched to the listing without AI.</p>}
+              </>
+            )}
           </div>
         ))}
       </div>
