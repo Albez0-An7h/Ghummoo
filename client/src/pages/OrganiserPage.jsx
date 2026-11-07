@@ -3,7 +3,7 @@ import { BadgeCheck, MapPin, Phone, Mail, AtSign, Globe, Star, Compass } from 'l
 import api from '../lib/api';
 import useAsync from '../lib/useAsync';
 import { Badge, Button, SafeImage, Spinner, EmptyState } from '../components/ui';
-import TripCard from '../components/TripCard';
+import { TripCard } from '../design/Cards';
 import { date } from '../lib/format';
 
 export default function OrganiserPage() {

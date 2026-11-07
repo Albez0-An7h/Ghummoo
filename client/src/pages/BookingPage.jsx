@@ -7,6 +7,7 @@ import useAsync from '../lib/useAsync';
 import { useAuth } from '../lib/auth';
 import { Button, Badge, StatusBadge, SafeImage, Spinner, EmptyState, Notice, Modal, Textarea, cx } from '../components/ui';
 import { money, dateRange, date, dateTime, daysUntil } from '../lib/format';
+import BookingProgress from '../design/BookingProgress';
 
 const STATUS_COPY = {
   requested: ['Waiting for the organiser', 'Your seats are held. The organiser will review your request and contact you to confirm and arrange payment.'],
@@ -99,6 +100,8 @@ export default function BookingPage() {
           <Notice tone={b.status === 'confirmed' ? 'success' : b.status === 'requested' ? 'warning' : 'info'} title={title}>
             {copy}{b.operatorNote && <p className="mt-1.5 font-semibold">Note from organiser: “{b.operatorNote}”</p>}
           </Notice>
+
+          <BookingProgress booking={b} />
 
           {/* Trip updates board */}
           <section className="rounded-3xl border border-line bg-white p-5 sm:p-6">

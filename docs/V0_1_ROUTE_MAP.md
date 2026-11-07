@@ -65,6 +65,18 @@ Guards are enforced on the server. Client guards (`RequireRole`) only shape the 
 
 Responses from `/india/*` are sent with `Cache-Control: public, max-age=300`.
 
+### Built in the traveller-experience milestone
+
+| Method and path | Auth | Change |
+| --- | --- | --- |
+| `GET /trips` | public | **Additive:** cards include `places { destinations, departureCities }` and `landscapes`. New filters: `place=<slug>` (goes to or departs from), `departureCity=<slug>`, `landscape=<slug>[,…]`, and `slugs=a,b`. The existing `from`/`to` date filters are unchanged |
+| `GET /trips/meta` | public | **Additive:** `places.destinations`, `places.departureCities` (with trip counts) and `landscapes` for filters |
+| `GET /trips/:slug` | optional | `places` entries now include `theme`; `landscapes` is added |
+| `GET /india/places` | public | **New.** Every published place (summary, with aliases), for search suggestions |
+| `GET /saved`, `PUT /saved/:slug`, `DELETE /saved/:slug` | traveller | **New.** Saved trips (`User.savedTrips`). Idempotent; unpublished trips drop out, and the count is returned as `unavailable` |
+
+The client routes `/`, `/india`, `/cities`, `/places/:slug`, `/trips`, `/trips/:slug`, `/compare` and `/decide` are live and use these APIs. `/destinations` redirects to `/india`. The sample-data prototype stays at `/v01`.
+
 ### Planned for V0.1 (not built yet)
 
 | Method and path | Auth | Purpose | Milestone |

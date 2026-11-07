@@ -28,6 +28,12 @@ async function tripsFor(placeIds, field = 'destinationRefs') {
   return rows.map((r) => r.card);
 }
 
+// GET /api/india/places: every published place (summary), for search suggestions.
+router.get('/places', asyncHandler(async (req, res) => {
+  const places = await Place.find(PUBLISHED, 'slug name kind placeType state featured aliases theme landscapes').sort({ featured: -1, order: 1, name: 1 }).populate('landscapes', 'slug').lean();
+  res.json({ success: true, data: places.map((p) => ({ slug: p.slug, name: p.name, kind: p.kind, placeType: p.placeType, state: p.state, featured: p.featured, aliases: p.aliases || [], theme: p.theme, landscapes: (p.landscapes || []).filter(Boolean).map((l) => l.slug) })) });
+}));
+
 // GET /api/india/landscapes: the six themes with honest counts.
 router.get('/landscapes', asyncHandler(async (req, res) => {
   const [landscapes, places, rows] = await Promise.all([
