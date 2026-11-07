@@ -319,8 +319,10 @@ async function seed() {
 }
 
 async function seedIfEmpty() {
-  if (await TripPackage.estimatedDocumentCount() > 0 || await User.estimatedDocumentCount() > 0) return false;
-  console.log('[seed] empty database: loading demo data');
+  // Seed when there are no trips yet. Leftover users from another app (e.g. the old Ghummoo
+  // collections) don't block it; existing records are never deleted.
+  if (await TripPackage.estimatedDocumentCount() > 0 || await User.exists({ email: /@ghumo\.demo$/ })) return false;
+  console.log('[seed] no trips found: loading demo data');
   await seed();
   console.log('[seed] done');
   return true;
