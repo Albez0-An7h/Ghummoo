@@ -34,3 +34,9 @@ npm-debug.log*
 .data/
 uploads/
 .cache/
+
+# End-to-end test output
+test-results/
+playwright-report/
+e2e/results.json
+e2e/quality-metrics.json

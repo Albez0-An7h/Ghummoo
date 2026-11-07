@@ -65,7 +65,7 @@ function PublicLayout() {
       <CompareProvider>
         <a href="#main" className="sr-only z-[80] rounded-full bg-ink px-4 py-2 font-bold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-3">Skip to content</a>
         <Navbar showAuth />
-        <main id="main" tabIndex={-1} className="outline-none">
+        <main id="main" tabIndex={-1} className="min-h-dvh outline-none">
           <Suspense fallback={<div className="pt-24"><Spinner /></div>}><Outlet /></Suspense>
         </main>
         <Footer />

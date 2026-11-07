@@ -130,19 +130,9 @@ function SetupNotice() {
         <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-peach text-brand-ink"><KeyRound className="size-5" aria-hidden /></div>
         <div className="min-w-0 space-y-3">
           <div>
-            <h2 className="text-lg font-extrabold">AI isn't set up on this server yet</h2>
-            <p className="mt-1 text-[15px] text-subtle">AI Package Studio runs on the server with your own provider key. The key never reaches the browser. Until it's configured, you can create packages manually.</p>
+            <h2 className="text-lg font-extrabold">AI Package Studio isn't available right now</h2>
+            <p className="mt-1 text-[15px] text-subtle">The AI provider isn't configured on this server, so itineraries can't be read automatically yet. You can still create the same package manually.</p>
           </div>
-          <div className="rounded-xl bg-ink p-4 font-mono text-[13px] leading-relaxed text-white/90 [overflow-wrap:anywhere]">
-            <p className="text-white/50"># server/.env</p>
-            <p>AI_PROVIDER=anthropic <span className="text-white/50"># or openai</span></p>
-            <p>ANTHROPIC_API_KEY=…</p>
-            <p className="text-white/50"># or, for any OpenAI-compatible API:</p>
-            <p>OPENAI_API_KEY=…</p>
-            <p>OPENAI_BASE_URL=https://api.openai.com/v1 <span className="text-white/50"># optional</span></p>
-            <p>AI_MODEL=… <span className="text-white/50"># optional</span></p>
-          </div>
-          <p className="text-[13px] text-subtle">Restart the server after editing <code className="rounded bg-sand px-1">server/.env</code>.</p>
           <Button to="/operator/packages/new"><PenLine className="size-4" />Create package manually</Button>
         </div>
       </div>

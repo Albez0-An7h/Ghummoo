@@ -299,3 +299,17 @@ test('T11: AI Package Studio is honest when no key is configured, and grounds nu
   const ok = normalise({ price: 7999, departureDates: [], itinerary: [], inclusions: [], exclusions: [], warnings: [] }, text);
   assert.equal(ok.draft.basePrice, 7999);
 });
+
+test('Sign-in is protected against password guessing without blocking normal use', async () => {
+  const email = `guess-${Date.now()}@ghumo.test`;
+  const owner = client();
+  assert.equal((await owner.post('/api/auth/register', { name: 'Guess Target', email, password: 'right-password-1' })).status, 201);
+  // Successful sign-ins never count towards the limit.
+  for (let i = 0; i < 12; i += 1) assert.equal((await client().post('/api/auth/login', { email, password: 'right-password-1' })).status, 200);
+  const attacker = client();
+  for (let i = 0; i < 10; i += 1) assert.equal((await attacker.post('/api/auth/login', { email, password: `wrong-${i}` })).status, 401);
+  const blocked = await attacker.post('/api/auth/login', { email, password: 'right-password-1' });
+  assert.equal(blocked.status, 429, 'locked after 10 failures, even with the right password');
+  // Other accounts are unaffected.
+  assert.equal((await client().post('/api/auth/login', { email: 'traveller@ghumo.demo', password: DEMO_PASSWORD })).status, 200);
+});
