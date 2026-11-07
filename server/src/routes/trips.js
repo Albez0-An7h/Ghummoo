@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { TripPackage, TripDeparture, Operator } = require('../models');
+const { TripPackage, TripDeparture, Operator, Place } = require('../models');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { optionalAuth } = require('../middleware/auth');
 const { notFoundErr } = require('../utils/http');
@@ -108,6 +108,12 @@ router.get('/:slug', optionalAuth, asyncHandler(async (req, res) => {
     similar = rows.map((r) => r.card).slice(0, 4);
   }
 
+  // Linked places from the India content directory (empty when not linked yet).
+  const placeIds = [...(pkg.destinationRefs || []), ...(pkg.departureCityRefs || [])];
+  const places = placeIds.length ? await Place.find({ _id: { $in: placeIds }, contentStatus: 'published' }, 'slug name kind state').lean() : [];
+  const pm = new Map(places.map((p) => [String(p._id), { slug: p.slug, name: p.name, kind: p.kind, state: p.state }]));
+  const resolve = (ids) => (ids || []).map((id) => pm.get(String(id))).filter(Boolean);
+
   const card = presentCard(pkg, deps, operator);
   res.json({
     success: true,
@@ -128,6 +134,7 @@ router.get('/:slug', optionalAuth, asyncHandler(async (req, res) => {
       },
       reviews,
       similar,
+      places: { destinations: resolve(pkg.destinationRefs), departureCities: resolve(pkg.departureCityRefs) },
     },
   });
 }));

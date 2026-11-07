@@ -1,13 +1,15 @@
 const router = require('express').Router();
 const {
-  Operator, OperatorVerification, TripPackage, TripDeparture, Booking, PaymentRecord, TripAnnouncement,
+  Operator, OperatorVerification, TripPackage, TripDeparture, Booking, PaymentRecord, TripAnnouncement, Place,
 } = require('../models');
+const mongoose = require('mongoose');
+const { linkPackagePlaces } = require('../migrations/v0_1');
 const { verifyToken } = require('../middleware/auth');
 const { requireRole, loadOperator } = require('../middleware/roleGuard');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { badRequest, notFoundErr, conflict, forbidden } = require('../utils/http');
 const { uniqueSlug, toList, escapeRegex } = require('../utils/text');
-const { releaseSeats } = require('../services/seats');
+const { releaseSeats, adjustConfirmedSeats } = require('../services/seats');
 
 router.use(verifyToken, requireRole('operator'));
 
@@ -102,7 +104,22 @@ const PKG_FIELDS = [
   'title', 'destination', 'region', 'country', 'startLocation', 'categories', 'durationDays', 'durationNights', 'basePrice',
   'currency', 'coverImage', 'images', 'summary', 'overview', 'highlights', 'itinerary', 'accommodation', 'transport', 'meals',
   'inclusions', 'exclusions', 'pickupInfo', 'cancellationPolicy', 'groupSize', 'source', 'aiWarnings',
+  'destinationRefs', 'departureCityRefs',
 ];
+
+// Validates optional links to the India content directory. Departure cities must be cities.
+async function validatePlaceRefs(data) {
+  for (const [field, label, onlyCities] of [['destinationRefs', 'Destination', false], ['departureCityRefs', 'Departure city', true]]) {
+    if (data[field] === undefined) continue;
+    const ids = Array.isArray(data[field]) ? [...new Set(data[field].map(String))] : null;
+    if (!ids || ids.some((id) => !mongoose.isValidObjectId(id))) throw badRequest(`${label} links must be a list of place IDs`);
+    if (ids.length > 12) throw badRequest(`Link at most 12 places in ${label.toLowerCase()}s`);
+    const found = await Place.find({ _id: { $in: ids }, contentStatus: 'published' }, 'kind').lean();
+    if (found.length !== ids.length) throw badRequest(`${label}: one or more places were not found`);
+    if (onlyCities && found.some((p) => p.kind !== 'city')) throw badRequest('Departure cities must be cities');
+    data[field] = ids;
+  }
+}
 
 function cleanPackage(body) {
   const data = pick(body || {}, PKG_FIELDS);
@@ -154,7 +171,10 @@ router.get('/packages', loadOperator(), asyncHandler(async (req, res) => {
 router.post('/packages', loadOperator(), asyncHandler(async (req, res) => {
   const data = cleanPackage(req.body);
   if (!data.title) throw badRequest('Title is required');
-  const pkg = await TripPackage.create({ ...data, operator: req.operator._id, slug: await uniqueSlug(TripPackage, data.title), status: 'draft' });
+  await validatePlaceRefs(data);
+  const pkg = new TripPackage({ ...data, operator: req.operator._id, slug: await uniqueSlug(TripPackage, data.title), status: 'draft' });
+  await linkPackagePlaces(pkg); // fills empty links from the package's own text; never guesses
+  await pkg.save();
   res.status(201).json({ success: true, data: pkg });
 }));
 
@@ -187,7 +207,9 @@ router.put('/packages/:id', loadOperator(), asyncHandler(async (req, res) => {
   const pkg = await ownPackage(req);
   if (pkg.status === 'removed') throw forbidden('This listing was removed by moderators');
   const data = cleanPackage(req.body);
+  await validatePlaceRefs(data);
   Object.assign(pkg, data);
+  await linkPackagePlaces(pkg);
   if (data.title && pkg.status === 'draft') pkg.slug = await uniqueSlug(TripPackage, data.title, pkg._id);
   if (pkg.status === 'published') {
     const active = await TripDeparture.countDocuments({ package: pkg._id, status: { $ne: 'cancelled' }, startDate: { $gte: new Date() } });
@@ -407,6 +429,7 @@ router.post('/bookings/:id/confirm', loadOperator(), asyncHandler(async (req, re
     { new: true }
   );
   if (!updated) throw conflict(`Only requested bookings can be confirmed (this one is ${b.status})`);
+  await adjustConfirmedSeats(b.departure, b.seats);
   res.json({ success: true, data: updated });
 }));
 
@@ -414,13 +437,15 @@ router.post('/bookings/:id/reject', loadOperator(), asyncHandler(async (req, res
   const b = await ownBooking(req);
   const note = String(req.body?.note || '').trim();
   if (note.length < 3) throw badRequest('Please tell the traveller why the request was declined');
-  const updated = await Booking.findOneAndUpdate(
+  const before = await Booking.findOneAndUpdate(
     { _id: b._id, status: { $in: ['requested', 'confirmed'] } },
     { $set: { status: 'rejected', operatorNote: note }, $push: { history: { status: 'rejected', note, by: req.user._id } } },
-    { new: true }
+    { new: false }
   );
-  if (!updated) throw conflict(`This booking is already ${b.status}`);
+  if (!before) throw conflict(`This booking is already ${b.status}`);
   await releaseSeats(b.departure, b.seats);
+  if (before.status === 'confirmed') await adjustConfirmedSeats(b.departure, -b.seats);
+  const updated = await Booking.findById(b._id);
   res.json({ success: true, data: updated });
 }));
 

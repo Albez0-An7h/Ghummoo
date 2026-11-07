@@ -18,6 +18,16 @@ const isBookable = (d) => {
   return d.status === 'open' && d.seatsAvailable > 0 && new Date(deadline) >= now && new Date(d.startDate) >= now;
 };
 
+// Public availability state of a departure, derived from stored fields only.
+function availabilityOf(d, now = new Date()) {
+  if (d.status === 'cancelled') return 'cancelled';
+  if (new Date(d.startDate) < now) return 'departed';
+  if (d.status === 'closed') return 'closed';
+  if (new Date(d.bookingDeadline || d.startDate) < now) return 'booking_closed';
+  if (d.seatsAvailable <= 0) return 'sold_out';
+  return 'available';
+}
+
 const presentDeparture = (d) => ({
   _id: d._id,
   startDate: d.startDate,
@@ -30,6 +40,7 @@ const presentDeparture = (d) => ({
   reportingTime: d.reportingTime,
   status: d.status,
   isBookable: isBookable(d),
+  availability: availabilityOf(d),
 });
 
 // Card shape used in listings.
@@ -83,7 +94,7 @@ async function listCards(pkgQuery, { limit } = {}) {
     .limit(limit || 500)
     .lean();
   const depMap = await departuresByPackage(pkgs.map((p) => p._id));
-  return pkgs.map((p) => ({ card: presentCard(p, depMap.get(String(p._id)) || [], opMap.get(String(p.operator))), deps: depMap.get(String(p._id)) || [] }));
+  return pkgs.map((p) => ({ card: presentCard(p, depMap.get(String(p._id)) || [], opMap.get(String(p.operator))), deps: depMap.get(String(p._id)) || [], pkg: p }));
 }
 
 async function ratingSummary(packageId) {
@@ -96,4 +107,4 @@ async function ratingSummary(packageId) {
   };
 }
 
-module.exports = { publicOperator, presentCard, presentDeparture, isBookable, listCards, departuresByPackage, approvedOperatorMap, ratingSummary, upcomingFilter };
+module.exports = { availabilityOf, publicOperator, presentCard, presentDeparture, isBookable, listCards, departuresByPackage, approvedOperatorMap, ratingSummary, upcomingFilter };

@@ -9,4 +9,7 @@ module.exports = {
   TripAnnouncement: require('./TripAnnouncement'),
   Review: require('./Review'),
   Report: require('./Report'),
+  // India content directory (editorial reference data)
+  Landscape: require('./Landscape'),
+  Place: require('./Place'),
 };

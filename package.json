@@ -11,9 +11,12 @@
     "seed": "npm run seed --prefix server",
     "test": "npm test --prefix server",
     "lint": "npm run lint --prefix client",
-    "replit": "npm run setup && npm run build && npm start"
+    "replit": "npm run setup && npm run build && npm start",
+    "migrate": "npm run migrate --prefix server"
   },
-  "engines": { "node": ">=20.19" },
+  "engines": {
+    "node": ">=20.19"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   }

@@ -22,6 +22,11 @@ const tripPackageSchema = new mongoose.Schema(
     region: { type: String, trim: true, default: '' },
     country: { type: String, trim: true, default: 'India' },
     startLocation: { type: String, trim: true, default: '' },
+    // Structured links to the India content directory (V0.1). Optional and additive: the
+    // free-text fields above stay the organiser's own wording. Empty means "not linked yet",
+    // never "nowhere". Places outside the directory (e.g. Bali) simply stay unlinked.
+    destinationRefs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Place', index: true }],
+    departureCityRefs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Place', index: true }],
     categories: [{ type: String, enum: CATEGORIES }],
     durationDays: { type: Number, min: 1, max: 60, default: null },
     durationNights: { type: Number, min: 0, max: 60, default: null },

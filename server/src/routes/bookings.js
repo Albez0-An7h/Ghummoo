@@ -4,7 +4,7 @@ const { verifyToken } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { badRequest, notFoundErr, forbidden, conflict } = require('../utils/http');
 const { bookingReference } = require('../utils/text');
-const { holdSeats, releaseSeats } = require('../services/seats');
+const { holdSeats, releaseSeats, adjustConfirmedSeats } = require('../services/seats');
 const { isBookable } = require('../services/trips');
 
 const MAX_SEATS = 10;
@@ -115,13 +115,16 @@ router.post('/:id/cancel', asyncHandler(async (req, res) => {
   if (!isOwner) throw forbidden('Only the traveller who made this booking can cancel it');
   if (!['requested', 'confirmed'].includes(booking.status)) throw conflict(`A ${booking.status} booking cannot be cancelled`);
   if (new Date(booking.departure.startDate) <= new Date()) throw conflict('This trip has already started');
-  const updated = await Booking.findOneAndUpdate(
+  // Read the pre-update document so we know whether confirmed seats must be released too.
+  const before = await Booking.findOneAndUpdate(
     { _id: booking._id, status: { $in: ['requested', 'confirmed'] } },
     { $set: { status: 'cancelled' }, $push: { history: { status: 'cancelled', note: String(req.body?.reason || 'Cancelled by traveller').slice(0, 300), by: req.user._id } } },
-    { new: true }
+    { new: false }
   );
-  if (!updated) throw conflict('Booking status changed, please refresh');
+  if (!before) throw conflict('Booking status changed, please refresh');
   await releaseSeats(booking.departure._id, booking.seats);
+  if (before.status === 'confirmed') await adjustConfirmedSeats(booking.departure._id, -booking.seats);
+  const updated = await Booking.findById(booking._id);
   res.json({ success: true, data: updated });
 }));
 

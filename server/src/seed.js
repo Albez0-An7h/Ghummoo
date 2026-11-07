@@ -2,6 +2,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const { connectDB, disconnectDB } = require('./config/db');
 const { seed, clearAll } = require('./seedData');
+const { runFoundation } = require('./migrations/v0_1');
 
 (async () => {
   if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force')) {
@@ -11,6 +12,7 @@ const { seed, clearAll } = require('./seedData');
   await connectDB();
   await clearAll();
   await seed();
+  await runFoundation({ log: console.log });
   console.log('Demo data loaded. Demo accounts are listed in README.md.');
   await disconnectDB();
   process.exit(0);
