@@ -8,7 +8,7 @@ import { usePaths, usePlaces } from './context';
 /* Accessible combobox over destinations, cities and experiences. Picking a place opens its
    page, picking an experience filters trips, and Enter with free text searches all trips.
    Arrow keys move through suggestions, Escape closes them. */
-export default function SearchBox({ size = 'lg', autoFocus, onDone, className, placeholder = 'Search a destination, city or experience' }) {
+export default function SearchBox({ size = 'lg', autoFocus, onDone, className, placeholder = 'Where do you want to go?' }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -59,8 +59,8 @@ export default function SearchBox({ size = 'lg', autoFocus, onDone, className, p
           aria-activedescendant={active >= 0 ? `${id}-o${active}` : undefined}
           className={cx('min-w-0 flex-1 bg-transparent font-semibold text-ink placeholder:font-medium placeholder:text-subtle focus:outline-none', size === 'lg' ? 'text-[17px]' : 'text-[15px]')}
         />
-        <button type="submit" className={cx('inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand font-extrabold text-white transition hover:bg-brand-hover', size === 'lg' ? 'h-12 px-5 text-[15px]' : 'h-9 px-4 text-sm')}>
-          <span className={size === 'lg' ? '' : 'sr-only sm:not-sr-only'}>Search</span><ArrowRight className="size-4" aria-hidden />
+        <button type="submit" className={cx('inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand font-extrabold text-white transition hover:bg-brand-hover', size === 'lg' ? 'h-12 px-4 text-[15px] sm:px-5' : 'h-9 px-4 text-sm')}>
+          <span className="sr-only sm:not-sr-only">Search</span><ArrowRight className="size-4" aria-hidden />
         </button>
       </div>
       {showList && (

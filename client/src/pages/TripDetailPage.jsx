@@ -260,8 +260,8 @@ export default function TripDetailPage() {
 
         <div className="mt-8 lg:grid lg:grid-cols-[1fr_380px] lg:gap-12">
           <div className="min-w-0">
-            <div className="flex flex-wrap gap-2">
-              {trip.categories?.map((c) => <Badge key={c} tone="brand">{CATEGORY_LABELS[c] || c}</Badge>)}
+            <div className="flex flex-wrap items-center gap-3">
+              {trip.categories?.length > 0 && <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-brand-ink">{trip.categories.map((c) => CATEGORY_LABELS[c] || c).join(' · ')}</p>}
               {trip.isDemo && <DemoBadge />}
             </div>
             <h1 className="mt-3 text-[32px] font-extrabold leading-[1.08] sm:text-[44px]">{trip.title}</h1>
@@ -272,10 +272,10 @@ export default function TripDetailPage() {
             </p>
 
             {(trip.places?.destinations?.length > 0 || trip.places?.departureCities?.length > 0) && (
-              <div className="mt-4 flex flex-wrap gap-2" aria-label="Places on this trip">
-                {trip.places.destinations.map((p) => <Link key={p.slug} to={`/places/${p.slug}`} className="inline-flex h-8 items-center gap-1 rounded-full bg-peach px-3 text-[13px] font-extrabold text-brand-ink hover:bg-[#ffd9bf]"><MapPin className="size-3.5" aria-hidden />{p.name}</Link>)}
-                {trip.places.departureCities.map((p) => <Link key={`from-${p.slug}`} to={`/places/${p.slug}`} className="inline-flex h-8 items-center rounded-full bg-white px-3 text-[13px] font-bold text-ink ring-1 ring-line hover:ring-brand-soft">From {p.name}</Link>)}
-              </div>
+              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] font-bold" aria-label="Places on this trip">
+                {trip.places.destinations.map((p) => <Link key={p.slug} to={`/places/${p.slug}`} className="inline-flex min-h-8 items-center gap-1 underline decoration-line decoration-2 underline-offset-4 hover:text-brand-ink hover:decoration-brand">Guide: {p.name}</Link>)}
+                {trip.places.departureCities.map((p) => <Link key={`from-${p.slug}`} to={`/places/${p.slug}`} className="inline-flex min-h-8 items-center underline decoration-line decoration-2 underline-offset-4 hover:text-brand-ink hover:decoration-brand">Leaves from {p.name}</Link>)}
+              </p>
             )}
             {!trip.preview && (
               <div className="mt-4 flex flex-wrap gap-2">

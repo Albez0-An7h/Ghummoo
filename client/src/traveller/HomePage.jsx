@@ -34,6 +34,10 @@ export default function HomePage() {
   const landscapes = useAsync(getLandscapes, []);
   const cities = useAsync(getCities, []);
   const hasDemo = trips.data?.items.some((t) => t.isDemo);
+  // When the API is down every section fails together: show one notice, not three.
+  const failed = [trips, landscapes, cities].filter((x) => x.error);
+  const outage = failed.length > 1;
+  const retryAll = () => failed.forEach((x) => x.reload());
 
   return (
     <>
@@ -41,7 +45,7 @@ export default function HomePage() {
         <div data-scene className="absolute inset-0 -z-10 [&_svg]:h-full [&_svg]:w-full"><Himalayas /></div>
         {/* Keeps hero text readable over the scene, stronger on phones. */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-ivory/85 via-ivory/70 to-ivory sm:from-ivory/55 sm:via-ivory/45" aria-hidden />
-        <div className="mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:px-8 lg:pb-24 lg:pt-24">
+        <div className="mx-auto max-w-7xl px-4 pb-10 pt-10 sm:px-6 sm:pb-16 sm:pt-20 lg:px-8 lg:pb-24 lg:pt-24">
           <div className="max-w-3xl">
             <p className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-1.5 text-[13px] font-extrabold text-brand-ink ring-1 ring-white backdrop-blur">
               <span className="size-1.5 rounded-full bg-brand" aria-hidden />Group trips from independent organisers
@@ -53,54 +57,60 @@ export default function HomePage() {
               Find a fixed-departure group trip, see exactly what's included, and travel with people who want the same journey.
             </p>
           </div>
-          <SearchBox className="mt-8 max-w-2xl" />
-          <div className="mt-8 grid max-w-3xl gap-3 sm:grid-cols-2">
-            <Link to={paths.trips()} className="group flex items-start gap-4 rounded-[24px] bg-white/90 p-5 ring-1 ring-white backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lift motion-reduce:hover:translate-y-0">
-              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-peach text-brand-ink"><MapPinned className="size-6" aria-hidden /></span>
+          <SearchBox className="mt-6 max-w-2xl sm:mt-8" />
+          <div className="mt-5 grid max-w-3xl gap-3 sm:mt-8 sm:grid-cols-2">
+            <Link to={paths.trips()} className="group flex items-start gap-4 rounded-[24px] bg-white/90 p-4 sm:p-5 ring-1 ring-white backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lift motion-reduce:hover:translate-y-0">
+              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-peach text-brand-ink sm:size-12"><MapPinned className="size-5 sm:size-6" aria-hidden /></span>
               <span>
                 <span className="block text-lg font-extrabold">I know where I want to go</span>
-                <span className="mt-0.5 block text-sm text-subtle">Browse trips by place, dates and budget.</span>
-                <span className="mt-2 inline-flex items-center gap-1 text-sm font-extrabold text-brand-ink">Browse trips<ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden /></span>
+                <span className="mt-0.5 hidden text-sm text-subtle sm:block">Browse trips by place, dates and budget.</span>
+                <span className="mt-1 inline-flex items-center gap-1 text-sm font-extrabold text-brand-ink sm:mt-2">Browse trips<ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden /></span>
               </span>
             </Link>
-            <Link to={paths.decide} className="group flex items-start gap-4 rounded-[24px] bg-ink p-5 text-white transition hover:-translate-y-0.5 hover:shadow-lift motion-reduce:hover:translate-y-0">
-              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand text-white"><Sparkles className="size-6" aria-hidden /></span>
+            <Link to={paths.decide} className="group flex items-start gap-4 rounded-[24px] bg-ink p-4 sm:p-5 text-white transition hover:-translate-y-0.5 hover:shadow-lift motion-reduce:hover:translate-y-0">
+              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-brand text-white sm:size-12"><Sparkles className="size-5 sm:size-6" aria-hidden /></span>
               <span>
                 <span className="block text-lg font-extrabold">Help me decide</span>
-                <span className="mt-0.5 block text-sm text-white/75">Tell us your budget, dates and vibe. We'll suggest listed trips that fit.</span>
-                <span className="mt-2 inline-flex items-center gap-1 text-sm font-extrabold text-brand-soft">Get suggestions<ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden /></span>
+                <span className="mt-0.5 hidden text-sm text-white/75 sm:block">Tell us your budget, dates and vibe. We'll suggest listed trips that fit.</span>
+                <span className="mt-1 inline-flex items-center gap-1 text-sm font-extrabold text-brand-soft sm:mt-2">Get suggestions<ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden /></span>
               </span>
             </Link>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl space-y-20 px-4 pt-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-16 px-4 pt-4 sm:space-y-20 sm:px-6 sm:pt-8 lg:px-8">
+        {outage && <ErrorState error={failed[0].error} onRetry={retryAll} />}
+        {!(outage && trips.error) && (
         <section aria-labelledby="curated">
           <SectionHead eyebrow="Leaving soon" id="curated" title="Trips with open seats" action={<Button variant="secondary" to={paths.trips()}>All trips<ArrowRight className="size-4" /></Button>}>
             The next departures with seats, straight from organisers' listings.{hasDemo && ' Listings marked Demo are sample data for this preview.'}
           </SectionHead>
           {trips.loading ? <GridSkeleton count={3} label="Loading trips" />
-            : trips.error ? <ErrorState error={trips.error} onRetry={trips.reload} />
+            : trips.error ? (outage ? null : <ErrorState error={trips.error} onRetry={trips.reload} />)
               : trips.data.items.length === 0 ? <EmptyState title="No departures with open seats right now">New trips appear here as soon as organisers publish dates.</EmptyState>
                 : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{trips.data.items.slice(0, 6).map((t) => <TripCard key={t._id} trip={t} />)}</div>}
         </section>
+        )}
 
+        {!(outage && landscapes.error) && (
         <section aria-labelledby="explore">
           <SectionHead eyebrow="Explore India" id="explore" title="Six landscapes, one country" action={<Button variant="secondary" to={paths.india()}>Start exploring<Compass className="size-4" /></Button>}>
             From Himalayan valleys to the backwaters of Kerala. Pick a landscape, then find the trips that go there.
           </SectionHead>
           {landscapes.loading ? <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">{Array.from({ length: 6 }, (_, i) => <Bone key={i} className="aspect-[4/3] rounded-[24px]" />)}</div>
-            : landscapes.error ? <ErrorState error={landscapes.error} onRetry={landscapes.reload} />
+            : landscapes.error ? (outage ? null : <ErrorState error={landscapes.error} onRetry={landscapes.reload} />)
               : <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">{landscapes.data.map((l) => <LandscapeTile key={l.slug} landscape={l} to={paths.india(`#${l.slug}`)} />)}</div>}
         </section>
+        )}
 
+        {!(outage && cities.error) && (
         <section aria-labelledby="cities">
           <SectionHead eyebrow="Cities" id="cities" title="Start from a city" action={<Button variant="secondary" to={paths.cities}>All cities<ArrowRight className="size-4" /></Button>}>
             Ten cities, each with its own landmarks, food and nearby escapes, and the trips that go there or leave from there.
           </SectionHead>
           {cities.loading ? <GridSkeleton count={5} kind="place" label="Loading cities" />
-            : cities.error ? <ErrorState error={cities.error} onRetry={cities.reload} />
+            : cities.error ? (outage ? null : <ErrorState error={cities.error} onRetry={cities.reload} />)
               : (
                 <ul className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" aria-label="Cities">
                   {cities.data.map((c) => (
@@ -111,6 +121,7 @@ export default function HomePage() {
                 </ul>
               )}
         </section>
+        )}
 
         <section className="relative overflow-hidden rounded-[32px] bg-ink px-6 py-12 text-white sm:px-12">
           <div className="absolute -right-24 -top-24 size-80 rounded-full bg-brand/30 blur-3xl" aria-hidden />

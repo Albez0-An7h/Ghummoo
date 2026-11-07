@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, BadgeCheck, CalendarDays, Heart, MapPin } from 'lucide-react';
 import { SafeImage, cx } from '../components/ui';
-import { shortDate, duration } from '../lib/format';
+import { shortDate, durationLong } from '../lib/format';
 import { PlaceArt, LandscapeArt } from '../scenes';
 import { PriceLabel, AvailabilityBadge } from './Booking';
 import { DataBadge } from './Feedback';
@@ -37,19 +37,13 @@ export function TripCard({ trip, className, showCompare = true, reason, caveats,
   const from = cityNames(trip);
   return (
     <article className={cx('group relative flex flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-line transition duration-300 hover:-translate-y-0.5 hover:shadow-lift motion-reduce:hover:translate-y-0', className)}>
-      <div className="relative aspect-[4/3] overflow-hidden bg-sand">
+      <div className="relative aspect-[16/9] overflow-hidden bg-sand sm:aspect-[4/3]">
         {trip.coverImage
           ? <SafeImage src={trip.coverImage} alt={trip.coverAlt || trip.title} sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 90vw" className="size-full transition duration-700 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100" />
           : firstPlace && <PlaceArt place={firstPlace} className="size-full [&>svg]:size-full" />}
         <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-          <div className="flex flex-wrap gap-1.5">
-            <DataBadge trip={trip} onImage />
-            <span className="glass rounded-full px-2.5 py-1 text-xs font-extrabold">{duration(trip.durationDays, trip.durationNights)}</span>
-          </div>
-          <div className="relative z-10 flex gap-1.5">
-            <SaveToggle trip={trip} onImage />
-            {showCompare && <CompareToggle trip={trip} onImage />}
-          </div>
+          <DataBadge trip={trip} onImage />
+          <SaveToggle trip={trip} onImage className="relative z-10 ml-auto" />
         </div>
       </div>
       <div className="flex flex-1 flex-col p-4 sm:p-5">
@@ -60,7 +54,9 @@ export function TripCard({ trip, className, showCompare = true, reason, caveats,
         <p className="mt-1 flex flex-wrap items-center gap-x-1 text-[13px] font-medium text-subtle">
           <span>by {trip.operator?.businessName}</span>
           {trip.operator?.verified && <BadgeCheck className="size-4 text-success" aria-label="Verified organiser" />}
-          {from && <span>· from {from}</span>}
+        </p>
+        <p className="mt-0.5 text-[13px] font-medium text-subtle">
+          {durationLong(trip.durationDays, trip.durationNights)}{from && <> · from {from}</>}
         </p>
         {difference && <p className="relative z-10 mt-3 rounded-2xl bg-warning-bg p-3 text-[13px] font-bold text-warning">{difference}</p>}
         {reason && (
@@ -76,7 +72,9 @@ export function TripCard({ trip, className, showCompare = true, reason, caveats,
         </div>
         <div className="mt-auto flex items-end justify-between gap-3 pt-4">
           <PriceLabel amount={trip.priceFrom} currency={trip.currency} />
-          {reason && <span className="text-sm font-extrabold text-brand-ink" aria-hidden>View details →</span>}
+          {reason
+            ? <span className="text-sm font-extrabold text-brand-ink" aria-hidden>View details →</span>
+            : showCompare && <CompareToggle trip={trip} plain className="relative z-10" />}
         </div>
       </div>
     </article>

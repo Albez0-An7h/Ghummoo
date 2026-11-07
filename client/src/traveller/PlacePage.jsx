@@ -70,10 +70,12 @@ export default function PlacePage() {
               <h1 className="mt-2 text-5xl font-extrabold leading-none sm:text-6xl">{p.name}</h1>
               <p className="mt-2 font-bold opacity-80">{p.kind === 'city' ? 'City' : 'Destination'} · {p.state}{p.theme?.name ? ` · ${p.theme.name}` : ''}</p>
               {p.intro ? <p className="mt-4 text-[17px] leading-relaxed">{p.intro}</p> : <p className="mt-4 text-[15px] opacity-80">We haven't written a guide for {p.name} yet.</p>}
-              <div className="mt-5 flex flex-wrap gap-2">
-                {p.landscapes.map((l) => <Link key={l.slug} to={paths.india(`#${l.slug}`)} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/80 px-3 text-[13px] font-extrabold text-ink"><span className="size-2.5 rounded-full" style={{ background: l.palette.primary }} aria-hidden />{l.name}</Link>)}
-                {p.experiences.map((e) => <span key={e} className="inline-flex h-9 items-center rounded-full bg-white/50 px-3 text-[13px] font-bold text-ink">{EXPERIENCE_LABEL[e]}</span>)}
-              </div>
+              {(p.landscapes.length > 0 || p.experiences.length > 0) && (
+                <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] font-bold">
+                  {p.landscapes.map((l) => <Link key={l.slug} to={paths.india(`#${l.slug}`)} className="inline-flex min-h-8 items-center gap-1.5 underline decoration-2 underline-offset-4 hover:opacity-80" style={{ textDecorationColor: l.palette.primary }}><span className="size-2.5 rounded-full" style={{ background: l.palette.primary }} aria-hidden />{l.name}</Link>)}
+                  {p.experiences.length > 0 && <span className="opacity-80">{p.experiences.map((e) => EXPERIENCE_LABEL[e]).join(' · ')}</span>}
+                </p>
+              )}
               <Button className="mt-6" href="#trips">{tripCount ? `See ${tripCount} trip${tripCount > 1 ? 's' : ''}` : 'Trips'}<ArrowRight className="size-4" /></Button>
             </div>
           </div>

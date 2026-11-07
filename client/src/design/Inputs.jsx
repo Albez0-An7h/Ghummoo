@@ -1,10 +1,10 @@
 import { useId, useState } from 'react';
-import { Check, Sparkles, ArrowUp } from 'lucide-react';
+import { Check, CornerDownRight, Sparkles, ArrowUp } from 'lucide-react';
 import { cx } from '../components/ui';
 
 /* PreferenceSelector: chip group built on native radio/checkbox inputs, so keyboard and
    screen-reader behaviour come for free. */
-export function PreferenceSelector({ legend, hint, options, value, onChange, multiple = false, className }) {
+export function PreferenceSelector({ legend, hint, options, value, onChange, multiple = false, className, size = 'md' }) {
   const name = useId();
   const selected = (v) => (multiple ? (value || []).includes(v) : value === v);
   const toggle = (v) => {
@@ -19,7 +19,7 @@ export function PreferenceSelector({ legend, hint, options, value, onChange, mul
         {options.map((o) => {
           const on = selected(o.value);
           return (
-            <label key={o.value} className={cx('relative inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full px-4 text-sm font-bold ring-1 transition',
+            <label key={o.value} className={cx('relative inline-flex cursor-pointer items-center gap-1.5 rounded-full font-bold ring-1 transition', size === 'sm' ? 'min-h-10 px-3 text-[13px]' : 'min-h-11 px-4 text-sm',
               'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand',
               on ? 'bg-ink text-white ring-ink' : 'bg-white text-ink ring-line hover:ring-brand-soft')}>
               <input
@@ -77,11 +77,11 @@ export function AIInput({ label, placeholder, suggestions = [], max = 300, busy,
         <span>{note}</span><span className="num shrink-0" aria-live="polite">{text.length}/{max}</span>
       </p>
       {suggestions.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2" aria-label="Suggested questions">
+        <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1" aria-label="Suggestions">
           {suggestions.map((s) => (
-            <button key={s} type="button" disabled={busy} onClick={() => send(s)} className="rounded-full bg-peach/70 px-3.5 py-2 text-left text-[13px] font-bold text-brand-ink transition hover:bg-peach disabled:opacity-50">{s}</button>
+            <li key={s}><button type="button" disabled={busy} onClick={() => send(s)} className="inline-flex min-h-9 items-center gap-1.5 text-left text-[14px] font-bold text-ink underline decoration-line decoration-2 underline-offset-4 transition hover:text-brand-ink hover:decoration-brand disabled:opacity-50"><CornerDownRight className="size-3.5 shrink-0 text-brand" aria-hidden />{s}</button></li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

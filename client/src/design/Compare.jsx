@@ -33,7 +33,7 @@ export function CompareProvider({ children }) {
 
 export const useCompare = () => useContext(Ctx);
 
-export function CompareToggle({ trip, className, onImage }) {
+export function CompareToggle({ trip, className, onImage, plain }) {
   const { has, toggle } = useCompare();
   const on = has(trip.slug);
   return (
@@ -41,8 +41,10 @@ export function CompareToggle({ trip, className, onImage }) {
       type="button"
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(trip); }}
       aria-pressed={on}
-      className={cx('inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold transition',
-        on ? 'bg-ink text-white' : onImage ? 'bg-white/90 text-ink hover:bg-white' : 'bg-white text-ink ring-1 ring-line hover:ring-brand-soft', className)}
+      className={cx(plain
+        ? cx('-mr-2 inline-flex h-9 items-center gap-1.5 rounded-full px-2 text-[13px] font-extrabold transition', on ? 'text-brand-ink' : 'text-subtle hover:text-ink')
+        : 'inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold transition',
+        plain ? '' : on ? 'bg-ink text-white' : onImage ? 'bg-white/90 text-ink hover:bg-white' : 'bg-white text-ink ring-1 ring-line hover:ring-brand-soft', className)}
     >
       <Scale className="size-3.5" aria-hidden />{on ? 'Comparing' : 'Compare'}
       <span className="sr-only"> {trip.title}</span>

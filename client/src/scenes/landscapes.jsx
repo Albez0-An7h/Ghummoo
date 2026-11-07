@@ -139,14 +139,22 @@ export function Northeast({ title }) {
     <Frame title={title}>
       <Sky id="sky-ne" top="#F2F0E2" mid="#E4EAD6" bottom="#D2DEC2" />
       <g data-depth="0.12"><path d={smooth([[0, 420], [240, 340], [520, 400], [800, 320], [1120, 390], [1400, 330], [1600, 380]])} fill="#A8C192" /></g>
-      <g data-depth="0.15" data-drift fill="#FFFFFF" opacity="0.65"><rect x="-200" y="390" width="900" height="34" rx="17" /><rect x="900" y="360" width="800" height="28" rx="14" /></g>
+      {/* Mist: soft-edged bands (radial fade), never hard bars. */}
+      <defs>
+        <radialGradient id="mist-ne">
+          <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.85" />
+          <stop offset="0.6" stopColor="#FFFFFF" stopOpacity="0.4" />
+          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <g data-depth="0.15" data-drift fill="url(#mist-ne)"><ellipse cx="300" cy="405" rx="520" ry="46" /><ellipse cx="1280" cy="372" rx="460" ry="40" /></g>
       <g data-depth="0.3">
         <path d={smooth([[0, 540], [300, 450], [640, 520], [960, 430], [1300, 520], [1600, 470]])} fill="#6F9A5E" />
         {/* Waterfall down the mid hill */}
         <path d="M1010 452 C1000 520 1030 560 1016 640 L1060 640 C1070 560 1046 520 1046 452 Z" fill="#F4F2E8" />
         <g data-wave stroke="#D2DEC2" strokeWidth="4" strokeDasharray="10 14"><path d="M1024 470 V630" /><path d="M1038 470 V630" /></g>
       </g>
-      <g data-depth="0.35" data-drift fill="#FFFFFF" opacity="0.5"><rect x="200" y="560" width="760" height="30" rx="15" /></g>
+      <g data-depth="0.35" data-drift fill="url(#mist-ne)" opacity="0.8"><ellipse cx="580" cy="572" rx="460" ry="42" /></g>
       <g data-depth="0.6"><path d={smooth([[0, 700], [380, 620], [760, 690], [1150, 630], [1600, 680]])} fill="#47744A" /></g>
       <g data-depth="0.9">
         <path d="M0 900 L0 780 C200 760 360 800 420 900 Z" fill="#2E5233" />

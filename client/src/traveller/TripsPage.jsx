@@ -29,9 +29,9 @@ function Filters({ f, set, facets, defaultMore }) {
         <option value="">Anywhere</option>
         {meta.places.destinations.map((p) => <option key={p.slug} value={p.slug}>{p.name} ({p.tripCount})</option>)}
       </FilterSelect>
-      <PreferenceSelector legend="Experience" options={meta.categories.map((c) => ({ value: c.name, label: CATEGORY_LABELS[c.name] || c.name }))} value={f.category} onChange={(v) => set({ category: v })} />
-      <PreferenceSelector legend="Budget per person" options={BUDGETS.map(([value, label]) => ({ value, label }))} value={f.maxPrice} onChange={(v) => set({ maxPrice: v })} />
-      <PreferenceSelector legend="Trip length" options={LENGTHS.map(([value, label]) => ({ value, label }))} value={f.maxDays} onChange={(v) => set({ maxDays: v })} />
+      <PreferenceSelector size="sm" legend="Experience" options={meta.categories.map((c) => ({ value: c.name, label: CATEGORY_LABELS[c.name] || c.name }))} value={f.category} onChange={(v) => set({ category: v })} />
+      <PreferenceSelector size="sm" legend="Budget per person" options={BUDGETS.map(([value, label]) => ({ value, label }))} value={f.maxPrice} onChange={(v) => set({ maxPrice: v })} />
+      <PreferenceSelector size="sm" legend="Trip length" options={LENGTHS.map(([value, label]) => ({ value, label }))} value={f.maxDays} onChange={(v) => set({ maxDays: v })} />
 
       <div className="border-t border-line pt-4">
         <button type="button" onClick={() => setMore((m) => !m)} aria-expanded={more} className="flex w-full items-center justify-between text-sm font-extrabold">
@@ -47,7 +47,7 @@ function Filters({ f, set, facets, defaultMore }) {
               <option value="">Any month</option>
               {upcomingMonths(8).map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
             </FilterSelect>
-            <PreferenceSelector legend="Landscape" options={landscapes.filter((l) => meta.landscapes.includes(l.slug)).map((l) => ({ value: l.slug, label: l.name, swatch: l.palette.primary }))} value={f.landscape} onChange={(v) => set({ landscape: v })} />
+            <PreferenceSelector size="sm" legend="Landscape" options={landscapes.filter((l) => meta.landscapes.includes(l.slug)).map((l) => ({ value: l.slug, label: l.name, swatch: l.palette.primary }))} value={f.landscape} onChange={(v) => set({ landscape: v })} />
             <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-extrabold">
               <input type="checkbox" checked={f.available === '1'} onChange={(e) => set({ available: e.target.checked ? '1' : '' })} className="size-5 accent-[#F26A2E]" />
               Only trips with open seats
@@ -96,12 +96,12 @@ export default function TripsPage() {
       : <Filters f={f} set={set} facets={facets.data} defaultMore={advancedActive} />;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-      <h1 className="text-[36px] font-extrabold leading-tight sm:text-5xl">Group trips</h1>
-      <p className="mt-1 text-subtle">Fixed-departure trips from independent organisers. Prices are per person; seats come from each organiser's live inventory.</p>
-      <SearchBox size="md" className="mt-6 max-w-xl" />
+    <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
+      <h1 className="text-[30px] font-extrabold leading-tight sm:text-5xl">Group trips</h1>
+      <p className="mt-1 text-subtle">Fixed departures from independent organisers<span className="hidden sm:inline">, with seats from each organiser's live inventory</span>.</p>
+      <SearchBox size="md" className="mt-4 max-w-xl sm:mt-6" />
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[280px_1fr]">
+      <div className="mt-5 grid sm:mt-8 gap-8 lg:grid-cols-[300px_1fr]">
         <aside className="hidden lg:block" aria-label="Filters">
           <div className="sticky top-24 rounded-[24px] bg-white p-5 ring-1 ring-line"><h2 className="mb-4 text-lg font-extrabold">Filters</h2>{filterPanel}</div>
         </aside>
@@ -110,15 +110,15 @@ export default function TripsPage() {
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="secondary" size="sm" className="lg:hidden" onClick={() => setDrawer(true)}><SlidersHorizontal className="size-4" />Filters{active.length ? ` (${active.length})` : ''}</Button>
             <p className="text-sm font-bold text-subtle" aria-live="polite">{loading ? 'Loading…' : data ? `${data.total} trip${data.total === 1 ? '' : 's'}` : ''}</p>
-            <div className="ml-auto w-48">
+            <div className="ml-auto w-[176px] sm:w-48">
               <label htmlFor="sort" className="sr-only">Sort by</label>
-              <select id="sort" value={f.sort || 'departure'} onChange={(e) => set({ sort: e.target.value === 'departure' ? '' : e.target.value })} className="h-10 w-full rounded-full border border-line bg-white px-3 text-sm font-bold focus:border-brand focus:outline-none">
+              <select id="sort" value={f.sort || 'departure'} onChange={(e) => set({ sort: e.target.value === 'departure' ? '' : e.target.value })} className="h-10 w-full rounded-full border border-line bg-white px-3 text-[13px] font-bold focus:border-brand focus:outline-none sm:text-sm">
                 {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
           </div>
           <div className="mt-3"><ActiveFilters items={active} onClear={clear} /></div>
-          {hasDemo && <p className="mt-3 text-xs font-semibold text-subtle">Trips marked “Demo” are sample listings for this preview. Every other listing is published by a real organiser.</p>}
+          {hasDemo && <p className="mt-3 hidden text-xs font-semibold text-subtle sm:block">Trips marked “Demo” are sample listings for this preview. Every other listing is published by a real organiser.</p>}
 
           <div className="mt-5">
             {loading ? <GridSkeleton count={6} label="Loading trips" />

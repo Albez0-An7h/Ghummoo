@@ -8,7 +8,7 @@ import { getLandscapes, getLandscape, getCities, getPlace, listTrips } from '../
 import { TripCard, DestinationCard } from '../design/Cards';
 import { GuideLabel, ErrorState, Bone, GridSkeleton } from '../design/Feedback';
 import { usePaths } from '../design/context';
-import { LANDSCAPE_SCENES, CITY_SCENES } from '../scenes';
+import { LANDSCAPE_SCENES, CITY_SCENES, LandscapeArt } from '../scenes';
 import { useSceneMotion, useReveal, refreshScroll } from '../motion/useSceneMotion';
 
 const FEATURED = ['jaipur', 'varanasi', 'delhi', 'mumbai'];
@@ -29,19 +29,19 @@ function LandscapeChapter({ landscape, index, total }) {
   return (
     <section id={landscape.slug} aria-labelledby={`${landscape.slug}-h`} className="scroll-mt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div data-scene className="relative h-[46vh] min-h-[300px] overflow-hidden rounded-[32px] sm:h-[62vh] sm:max-h-[680px] [&_svg]:size-full" style={{ background: landscape.palette.secondary }}>
+        <div data-scene className="relative h-[220px] overflow-hidden rounded-[32px] sm:h-[300px] lg:h-[360px] [&_svg]:size-full" style={{ background: landscape.palette.secondary }}>
           {Scene && <Scene />}
           <span className="absolute left-4 top-4 rounded-full bg-white/85 px-3 py-1 text-xs font-extrabold text-ink backdrop-blur">Chapter {index + 1} of {total}</span>
         </div>
-        <div className={cx('relative z-10 -mt-20 grid gap-5 sm:-mt-28 lg:grid-cols-[1fr_1.15fr] lg:gap-8', index % 2 && 'lg:[&>*:first-child]:order-2')}>
-          <div className="rounded-[28px] bg-white/95 p-6 shadow-lift ring-1 ring-line backdrop-blur sm:p-8">
+        <div className={cx('mt-5 grid gap-5 sm:mt-6 lg:grid-cols-[1fr_1.15fr] lg:gap-8', index % 2 && 'lg:[&>*:first-child]:order-2')}>
+          <div className="rounded-[28px] bg-white p-6 ring-1 ring-line sm:p-8">
             <GuideLabel />
             <h2 id={`${landscape.slug}-h`} className="mt-2 text-3xl font-extrabold leading-tight sm:text-[40px]" style={{ color: landscape.palette.ink }}>{landscape.name}</h2>
             <p className="mt-1 flex items-center gap-2 text-[15px] font-bold text-ink/75"><span className="size-2.5 shrink-0 rounded-full" style={{ background: landscape.palette.primary }} aria-hidden />{landscape.tagline}</p>
             <p className="mt-4 text-[16px] leading-relaxed text-ink/85">{landscape.intro}</p>
-            <ul className="mt-5 flex flex-wrap gap-2" aria-label={`Places in ${landscape.name}`}>
+            <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1" aria-label={`Places in ${landscape.name}`}>
               {landscape.places.slice(0, 8).map((p) => (
-                <li key={p.slug}><Link to={paths.place(p.slug)} className="inline-flex h-9 items-center gap-1 rounded-full bg-sand px-3 text-[13px] font-bold hover:bg-peach"><MapPin className="size-3.5 text-brand" aria-hidden />{p.name}</Link></li>
+                <li key={p.slug}><Link to={paths.place(p.slug)} className="inline-flex min-h-8 items-center gap-1 text-[14px] font-bold underline decoration-line decoration-2 underline-offset-4 hover:text-brand-ink hover:decoration-brand"><MapPin className="size-3.5 text-brand" aria-hidden />{p.name}</Link></li>
               ))}
             </ul>
             <Button variant="dark" className="mt-6" to={paths.trips(`?landscape=${landscape.slug}`)}>
@@ -128,25 +128,43 @@ export default function ExploreIndiaPage() {
 
   return (
     <div ref={root}>
-      <header className="mx-auto max-w-7xl px-4 pb-10 pt-12 sm:px-6 sm:pt-16 lg:px-8">
-        <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-brand-ink">Explore India</p>
-        <h1 className="mt-2 max-w-3xl text-[40px] font-extrabold leading-[1.04] tracking-[-0.03em] sm:text-6xl">Six landscapes. Four city stories. Real trips at every stop.</h1>
-        <p className="mt-4 max-w-2xl text-[17px] text-subtle">Scroll through India's landscapes and cities. Every chapter ends in trips you can open, compare and request.</p>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Button href="#all-trips" variant="dark"><ArrowDown className="size-4" />Skip to trips</Button>
-          <Button to={paths.trips()} variant="secondary">Search all trips</Button>
+      <header className="mx-auto grid max-w-7xl items-end gap-10 px-4 pb-10 pt-12 sm:px-6 sm:pt-16 lg:grid-cols-[1.15fr_1fr] lg:px-8">
+        <div className="min-w-0">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-brand-ink">Explore India</p>
+          <h1 className="mt-2 max-w-3xl text-[40px] font-extrabold leading-[1.04] tracking-[-0.03em] sm:text-6xl lg:text-[56px]">Six landscapes. Four city stories. Real trips at every stop.</h1>
+          <p className="mt-4 max-w-2xl text-[17px] text-subtle">Scroll through India's landscapes and cities. Every chapter ends in trips you can open, compare and request.</p>
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Button href="#all-trips" variant="dark"><ArrowDown className="size-4" />Skip to trips</Button>
+            <Button to={paths.trips()} variant="secondary">Search all trips</Button>
+          </div>
+          {data && (
+            <nav aria-label="Chapters" className="mt-8 lg:hidden">
+              <ul className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+                {data.landscapes.map((l) => <li key={l.slug} className="shrink-0"><a href={`#${l.slug}`} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-bold ring-1 ring-line hover:ring-brand"><span className="size-2.5 rounded-full" style={{ background: l.palette.primary }} aria-hidden />{l.name}</a></li>)}
+              </ul>
+              <p className="mt-3 flex gap-5 text-sm font-extrabold"><a href="#cities" className="text-brand-ink underline-offset-4 hover:underline">City stories →</a><a href="#city-index" className="text-brand-ink underline-offset-4 hover:underline">All cities →</a></p>
+            </nav>
+          )}
         </div>
         {data && (
-          <nav aria-label="Chapters" className="no-scrollbar -mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-            {data.landscapes.map((l) => <a key={l.slug} href={`#${l.slug}`} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-sm font-bold ring-1 ring-line hover:ring-brand"><span className="size-2.5 rounded-full" style={{ background: l.palette.primary }} aria-hidden />{l.name}</a>)}
-            <a href="#cities" className="inline-flex h-10 shrink-0 items-center rounded-full bg-peach px-4 text-sm font-bold text-brand-ink">City stories</a>
-            <a href="#city-index" className="inline-flex h-10 shrink-0 items-center rounded-full bg-peach px-4 text-sm font-bold text-brand-ink">All cities</a>
+          <nav aria-label="Chapters" className="hidden lg:block">
+            <ul className="grid grid-cols-3 gap-3">
+              {data.landscapes.map((l, i) => (
+                <li key={l.slug}>
+                  <a href={`#${l.slug}`} className="group block">
+                    <LandscapeArt slug={l.slug} className="aspect-[4/3] rounded-2xl ring-1 ring-black/5 transition group-hover:-translate-y-0.5 group-hover:shadow-lift motion-reduce:group-hover:translate-y-0 [&>svg]:size-full" />
+                    <span className="mt-2 block text-[13px] font-extrabold"><span className="text-subtle">{i + 1}.</span> {l.name}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 flex gap-5 text-sm font-extrabold"><a href="#cities" className="text-brand-ink underline-offset-4 hover:underline">City stories →</a><a href="#city-index" className="text-brand-ink underline-offset-4 hover:underline">All cities →</a></p>
           </nav>
         )}
       </header>
 
       {loading ? (
-        <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8" role="status" aria-busy="true"><span className="sr-only">Loading Explore India</span><Bone className="h-[46vh] rounded-[32px]" /><Bone className="h-48 rounded-[28px]" /></div>
+        <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8" role="status" aria-busy="true"><span className="sr-only">Loading Explore India</span><Bone className="h-[220px] rounded-[32px] sm:h-[300px] lg:h-[360px]" /><Bone className="h-48 rounded-[28px]" /></div>
       ) : error ? (
         <div className="mx-auto max-w-3xl px-4"><ErrorState error={error} onRetry={reload} /></div>
       ) : (
