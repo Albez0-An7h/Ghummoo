@@ -1,0 +1,15 @@
+# gitleaks configuration for CI (.github/workflows/ci.yml). Keeps every default rule and
+# allows only specific, reviewed values that the generic-api-key rule mistakes for secrets.
+# Add an entry here only after confirming the value is not a credential.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Reviewed non-secrets"
+regexTarget = "line"
+regexes = [
+  # Illustration identifiers in the Explore India content export, e.g. "key": "illustration/city/delhi"
+  '''"key":\s*"illustration/[a-z0-9/_-]+"''',
+  # localStorage key for the compare tray in client/src/design/Compare.jsx
+  '''const KEY = 'ghumo\.v01\.compare';''',
+]
