@@ -61,6 +61,17 @@ export default function StudioPage() {
         Paste the caption you already use on Instagram or WhatsApp. We pull out the details so you don't have to retype them.
       </PageHeader>
 
+      <ol className="grid gap-2 sm:grid-cols-4" aria-label="Steps to a published trip">
+        {['Paste your description', 'Review and fill the gaps', 'Save as a draft', 'Add dates and photos, preview, publish'].map((t, i) => {
+          const current = (result ? 1 : 0) === i;
+          return (
+            <li key={t} aria-current={current ? 'step' : undefined} className={cx('flex items-center gap-2 rounded-2xl px-3 py-2.5 text-[13px] font-bold', current ? 'bg-ink text-white' : 'bg-white text-subtle ring-1 ring-line')}>
+              <span className={cx('grid size-6 shrink-0 place-items-center rounded-full text-xs', current ? 'bg-brand' : 'bg-sand text-ink')}>{i + 1}</span>{t}
+            </li>
+          );
+        })}
+      </ol>
+
       <div className="grid gap-3 sm:grid-cols-3">
         {[
           [ShieldCheck, 'Only what you wrote', 'Anything missing from your post stays blank. Nothing is made up.'],
@@ -99,6 +110,7 @@ export default function StudioPage() {
                 {!generating && <Wand2 className="size-4" />}{generating ? 'Reading your post…' : 'Generate package'}
               </Button>
             </div>
+            <p className="text-[13px] text-subtle">Have the itinerary as a PDF? Copy its text and paste it here. PDF upload isn't supported yet, so nothing gets misread.</p>
             {generating && <p className="text-[13px] text-subtle" role="status">This usually takes 5–20 seconds. We're matching prices, dates and inclusions to your exact words.</p>}
           </div>
         </Card>
@@ -118,19 +130,9 @@ function SetupNotice() {
         <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-peach text-brand-ink"><KeyRound className="size-5" aria-hidden /></div>
         <div className="min-w-0 space-y-3">
           <div>
-            <h2 className="text-lg font-extrabold">AI isn't set up on this server yet</h2>
-            <p className="mt-1 text-[15px] text-subtle">AI Package Studio runs on the server with your own provider key. The key never reaches the browser. Until it's configured, you can create packages manually.</p>
+            <h2 className="text-lg font-extrabold">AI Package Studio isn't available right now</h2>
+            <p className="mt-1 text-[15px] text-subtle">The AI provider isn't configured on this server, so itineraries can't be read automatically yet. You can still create the same package manually.</p>
           </div>
-          <div className="rounded-xl bg-ink p-4 font-mono text-[13px] leading-relaxed text-white/90 [overflow-wrap:anywhere]">
-            <p className="text-white/50"># server/.env</p>
-            <p>AI_PROVIDER=anthropic <span className="text-white/50"># or openai</span></p>
-            <p>ANTHROPIC_API_KEY=…</p>
-            <p className="text-white/50"># or, for any OpenAI-compatible API:</p>
-            <p>OPENAI_API_KEY=…</p>
-            <p>OPENAI_BASE_URL=https://api.openai.com/v1 <span className="text-white/50"># optional</span></p>
-            <p>AI_MODEL=… <span className="text-white/50"># optional</span></p>
-          </div>
-          <p className="text-[13px] text-subtle">Restart the server after editing <code className="rounded bg-sand px-1">server/.env</code>.</p>
           <Button to="/operator/packages/new"><PenLine className="size-4" />Create package manually</Button>
         </div>
       </div>

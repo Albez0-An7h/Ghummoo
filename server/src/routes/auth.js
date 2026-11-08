@@ -2,8 +2,15 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const { User, Operator } = require('../models');
 const { verifyToken, optionalAuth } = require('../middleware/auth');
+const { isVerified } = require('../services/trips');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { badRequest } = require('../utils/http');
+const { rateLimit } = require('../middleware/rateLimit');
+
+// Brute-force protection: failed sign-ins per account and IP, and new accounts per IP.
+const loginLimiter = rateLimit({ windowMs: 15 * 60000, max: Number(process.env.LOGIN_FAILURES_PER_15_MIN) || 10, name: 'login', onlyFailures: true,
+  key: (req) => `${req.ip}:${String(req.body?.email || '').trim().toLowerCase()}` });
+const registerLimiter = rateLimit({ windowMs: 15 * 60000, max: Number(process.env.REGISTRATIONS_PER_15_MIN) || 20, name: 'register' });
 
 // `secure` follows the actual connection (trust proxy is on), so cookies work on plain-HTTP
 // localhost and are HTTPS-only behind Replit's or any other TLS proxy.
@@ -29,12 +36,12 @@ async function profile(user) {
   const out = { _id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone, isDemo: user.isDemo };
   if (user.role === 'operator') {
     const op = await Operator.findOne({ owner: user._id }).lean();
-    out.operator = op ? { _id: op._id, businessName: op.businessName, slug: op.slug, status: op.status, verified: Boolean(op.verifiedAt) } : null;
+    out.operator = op ? { _id: op._id, businessName: op.businessName, slug: op.slug, status: op.status, verified: isVerified(op) } : null;
   }
   return out;
 }
 
-router.post('/register', asyncHandler(async (req, res) => {
+router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
   const { name, email, password, phone } = req.body || {};
   const role = req.body.role === 'operator' ? 'operator' : 'traveler';
   if (!name || String(name).trim().length < 2) throw badRequest('Please enter your full name');
@@ -46,7 +53,7 @@ router.post('/register', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: await profile(user) });
 }));
 
-router.post('/login', asyncHandler(async (req, res) => {
+router.post('/login', loginLimiter, asyncHandler(async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) throw badRequest('Email and password are required');
   const user = await User.findOne({ email: String(email).toLowerCase().trim() }).select('+passwordHash');

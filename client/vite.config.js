@@ -17,6 +17,8 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('react-router') || id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) return 'react';
+            // GSAP is used only by the lazy V0.1 prototype; keep it out of the shared vendor chunk.
+            if (id.includes('/gsap/')) return 'gsap';
             return 'vendor';
           }
         },

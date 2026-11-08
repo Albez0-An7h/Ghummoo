@@ -7,6 +7,10 @@ import useAsync from '../lib/useAsync';
 import { useAuth } from '../lib/auth';
 import { Button, Tabs, StatusBadge, SafeImage, Spinner, EmptyState, ErrorState, Input, Badge } from '../components/ui';
 import { money, dateRange, daysUntil } from '../lib/format';
+import { NEXT_STEP } from '../design/BookingProgress';
+import { getMyGroups } from '../lib/groups';
+import { TripCard } from '../design/Cards';
+import { GridSkeleton } from '../design/Feedback';
 
 function Profile() {
   const { user, refresh } = useAuth();
@@ -47,7 +51,10 @@ export default function MyTripsPage() {
       closed: list.filter((b) => ['rejected', 'cancelled'].includes(b.status)),
     };
   }, [data]);
-  const items = groups[tab];
+  const items = groups[tab] || [];
+  const saved = useAsync(() => api.get('/saved'), []);
+  const chats = useAsync(getMyGroups, []);
+  const unreadFor = (depId) => chats.data?.items.find((g) => String(g.departureId) === String(depId))?.unread || 0;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
@@ -59,7 +66,20 @@ export default function MyTripsPage() {
             { value: 'upcoming', label: 'Upcoming', count: groups.upcoming.length },
             { value: 'past', label: 'Past trips', count: groups.past.length },
             { value: 'closed', label: 'Cancelled & declined', count: groups.closed.length },
+            { value: 'saved', label: 'Saved', count: saved.data?.items.length ?? 0 },
           ]} />
+          {tab === 'saved' ? (
+            <div className="mt-5">
+              {saved.loading ? <GridSkeleton count={2} label="Loading saved trips" /> : saved.error ? <ErrorState error={saved.error} onRetry={saved.reload} /> : saved.data.items.length === 0 ? (
+                <EmptyState icon={Compass} title="No saved trips yet" action={<Button to="/trips">Browse trips</Button>}>Tap the heart on any trip to keep it here for later.</EmptyState>
+              ) : (
+                <>
+                  <div className="grid gap-5 sm:grid-cols-2">{saved.data.items.map((t) => <TripCard key={t._id} trip={t} />)}</div>
+                  {saved.data.unavailable > 0 && <p className="mt-3 text-sm text-subtle">{saved.data.unavailable} saved trip{saved.data.unavailable > 1 ? 's are' : ' is'} no longer listed by the organiser.</p>}
+                </>
+              )}
+            </div>
+          ) : (
           <div className="mt-5 space-y-3">
             {loading ? <Spinner /> : error ? <ErrorState error={error} onRetry={reload} /> : items.length === 0 ? (
               <EmptyState icon={Compass} title={tab === 'upcoming' ? 'No upcoming trips' : tab === 'past' ? 'No past trips yet' : 'Nothing here'} action={tab === 'upcoming' && <Button to="/trips">Find a trip</Button>}>
@@ -76,6 +96,8 @@ export default function MyTripsPage() {
                       <h3 className="mt-1.5 truncate text-[17px] font-extrabold group-hover:text-brand-ink">{b.package?.title}</h3>
                       <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-subtle"><CalendarDays className="size-4 shrink-0 text-brand" /><span className="truncate">{dateRange(b.departure.startDate, b.departure.endDate)}</span></p>
                       <p className="mt-0.5 text-[13px] text-subtle">{b.seats} traveller{b.seats > 1 ? 's' : ''} · <span className="num">{money(b.totalAmount, b.currency)}</span> · {b.reference}</p>
+                      <p className="mt-1.5 text-[13px] font-semibold text-ink/80">{NEXT_STEP[b.status]}</p>
+                      {b.status === 'confirmed' && unreadFor(b.departure._id) > 0 && <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-brand px-2.5 py-0.5 text-xs font-extrabold text-white">{unreadFor(b.departure._id)} new in trip group</p>}
                     </div>
                     <ChevronRight className="size-5 shrink-0 text-muted transition group-hover:translate-x-0.5" />
                   </div>
@@ -83,6 +105,7 @@ export default function MyTripsPage() {
               );
             })}
           </div>
+          )}
         </div>
         <aside><Profile /></aside>
       </div>

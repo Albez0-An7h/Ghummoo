@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['traveler', 'operator', 'admin'], default: 'traveler' },
     phone: { type: String, default: null, trim: true },
     isDemo: { type: Boolean, default: false },
+    // Trips a traveller saved for later (V0.1). Only published listings are ever shown back.
+    savedTrips: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'TripPackage' }], default: [], select: false },
   },
   { timestamps: true }
 );

@@ -1,4 +1,7 @@
-const { Operator, TripPackage, TripDeparture, Review } = require('../models');
+const { Operator, TripPackage, TripDeparture, Review, Place, Landscape } = require('../models');
+
+// The public "Verified" badge needs both an admin-reviewed verification and listing approval.
+const isVerified = (op) => Boolean(op && op.verifiedAt && op.status === 'approved');
 
 const publicOperator = (op) => op && ({
   _id: op._id,
@@ -6,7 +9,7 @@ const publicOperator = (op) => op && ({
   slug: op.slug,
   location: op.location,
   logoUrl: op.logoUrl,
-  verified: Boolean(op.verifiedAt),
+  verified: isVerified(op),
   isDemo: op.isDemo,
 });
 
@@ -17,6 +20,16 @@ const isBookable = (d) => {
   const deadline = d.bookingDeadline || d.startDate;
   return d.status === 'open' && d.seatsAvailable > 0 && new Date(deadline) >= now && new Date(d.startDate) >= now;
 };
+
+// Public availability state of a departure, derived from stored fields only.
+function availabilityOf(d, now = new Date()) {
+  if (d.status === 'cancelled') return 'cancelled';
+  if (new Date(d.startDate) < now) return 'departed';
+  if (d.status === 'closed') return 'closed';
+  if (new Date(d.bookingDeadline || d.startDate) < now) return 'booking_closed';
+  if (d.seatsAvailable <= 0) return 'sold_out';
+  return 'available';
+}
 
 const presentDeparture = (d) => ({
   _id: d._id,
@@ -30,6 +43,7 @@ const presentDeparture = (d) => ({
   reportingTime: d.reportingTime,
   status: d.status,
   isBookable: isBookable(d),
+  availability: availabilityOf(d),
 });
 
 // Card shape used in listings.
@@ -76,14 +90,42 @@ async function departuresByPackage(packageIds) {
   return map;
 }
 
+// Public summary of a linked place (India content directory), as shown on cards.
+const placeOut = (p) => ({ slug: p.slug, name: p.name, kind: p.kind, placeType: p.placeType, state: p.state, theme: p.theme?.palette ? { name: p.theme.name, palette: p.theme.palette } : undefined });
+
+// Resolves TripPackage.destinationRefs / departureCityRefs for many packages in two queries.
+async function placeLookup(pkgs) {
+  const ids = [...new Set(pkgs.flatMap((p) => [...(p.destinationRefs || []), ...(p.departureCityRefs || [])]).map(String))];
+  if (!ids.length) return { places: new Map(), landscapes: new Map() };
+  const [places, landscapes] = await Promise.all([
+    Place.find({ _id: { $in: ids }, contentStatus: 'published' }, 'slug name kind placeType state theme landscapes').lean(),
+    Landscape.find({ contentStatus: 'published' }, 'slug').lean(),
+  ]);
+  return { places: new Map(places.map((p) => [String(p._id), p])), landscapes: new Map(landscapes.map((l) => [String(l._id), l.slug])) };
+}
+
+function withPlaces(card, pkg, lookup) {
+  const resolve = (ids) => (ids || []).map((id) => lookup.places.get(String(id))).filter(Boolean);
+  const dest = resolve(pkg.destinationRefs);
+  return {
+    ...card,
+    places: { destinations: dest.map(placeOut), departureCities: resolve(pkg.departureCityRefs).map(placeOut) },
+    landscapes: [...new Set(dest.flatMap((p) => (p.landscapes || []).map((id) => lookup.landscapes.get(String(id))).filter(Boolean)))],
+  };
+}
+
 async function listCards(pkgQuery, { limit } = {}) {
   const opMap = await approvedOperatorMap();
   const pkgs = await TripPackage.find({ $and: [pkgQuery, { status: 'published', operator: { $in: [...opMap.keys()] } }] })
     .sort({ createdAt: -1 })
     .limit(limit || 500)
     .lean();
-  const depMap = await departuresByPackage(pkgs.map((p) => p._id));
-  return pkgs.map((p) => ({ card: presentCard(p, depMap.get(String(p._id)) || [], opMap.get(String(p.operator))), deps: depMap.get(String(p._id)) || [] }));
+  const [depMap, lookup] = await Promise.all([departuresByPackage(pkgs.map((p) => p._id)), placeLookup(pkgs)]);
+  return pkgs.map((p) => ({
+    card: withPlaces(presentCard(p, depMap.get(String(p._id)) || [], opMap.get(String(p.operator))), p, lookup),
+    deps: depMap.get(String(p._id)) || [],
+    pkg: p,
+  }));
 }
 
 async function ratingSummary(packageId) {
@@ -96,4 +138,4 @@ async function ratingSummary(packageId) {
   };
 }
 
-module.exports = { publicOperator, presentCard, presentDeparture, isBookable, listCards, departuresByPackage, approvedOperatorMap, ratingSummary, upcomingFilter };
+module.exports = { isVerified, placeLookup, withPlaces, availabilityOf, publicOperator, presentCard, presentDeparture, isBookable, listCards, departuresByPackage, approvedOperatorMap, ratingSummary, upcomingFilter };

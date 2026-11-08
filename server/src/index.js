@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const crypto = require('crypto');
 const { connectDB, disconnectDB } = require('./config/db');
 const { seedIfEmpty } = require('./seedData');
+const { runFoundation } = require('./migrations/v0_1');
 
 if (!process.env.JWT_SECRET) {
   // Never crash-loop on a missing secret: hosts like Render keep restarting a crashed app and
@@ -43,6 +44,11 @@ async function connectWithRetry() {
       if (process.env.SEED_ON_EMPTY !== 'false' && (mode === 'embedded' || process.env.SEED_ON_EMPTY === 'true')) {
         // eslint-disable-next-line no-await-in-loop
         await seedIfEmpty();
+      }
+      // V0.1 content directory + package links + confirmed-seat counters (idempotent, non-destructive).
+      if (process.env.AUTO_MIGRATE !== 'false') {
+        // eslint-disable-next-line no-await-in-loop
+        await runFoundation({ log: console.log });
       }
       app.locals.db = { ready: true, mode, error: null, state: 'ready' };
       console.log('[ghumo] database ready');

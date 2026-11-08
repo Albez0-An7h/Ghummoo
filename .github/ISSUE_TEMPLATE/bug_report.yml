@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in Ghumo AI does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security problems must not be reported here**: follow SECURITY.md instead.
+        Please do not paste real traveller or organiser personal data, passwords or API keys.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, including any error message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use the demo accounts from README.md where possible.
+      placeholder: |
+        1. Sign in as traveller@ghumo.demo
+        2. Open /trips and …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Traveller (discovery, trip page, booking, My trips)
+        - Organiser (packages, departures, bookings, payments)
+        - AI Package Studio
+        - AI discovery / Ask this trip
+        - Trip groups
+        - Admin
+        - Setup, build or tests
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Browser and device, or Node version and OS for setup problems. Commit or branch if known.
+      placeholder: Chrome 140 on Android / Node 22.11 on macOS, branch staging @ abc1234
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Remove secrets and personal data first.
+      render: shell

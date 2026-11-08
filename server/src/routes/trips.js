@@ -1,10 +1,10 @@
 const router = require('express').Router();
-const { TripPackage, TripDeparture, Operator } = require('../models');
+const { TripPackage, TripDeparture, Operator, Place, Landscape, ListingView } = require('../models');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { optionalAuth } = require('../middleware/auth');
 const { notFoundErr } = require('../utils/http');
 const { escapeRegex } = require('../utils/text');
-const { listCards, presentCard, presentDeparture, publicOperator, ratingSummary, isBookable } = require('../services/trips');
+const { listCards, presentCard, presentDeparture, publicOperator, ratingSummary, isBookable, placeLookup, withPlaces } = require('../services/trips');
 
 // GET /api/trips?q=&destination=&category=&minPrice=&maxPrice=&from=&to=&minDays=&maxDays=&city=&sort=&limit=
 router.get('/', asyncHandler(async (req, res) => {
@@ -23,6 +23,25 @@ router.get('/', asyncHandler(async (req, res) => {
   if (city) pkgQuery.startLocation = new RegExp(escapeRegex(city), 'i');
   if (req.query.minDays) pkgQuery.durationDays = { ...(pkgQuery.durationDays || {}), $gte: Number(req.query.minDays) };
   if (req.query.maxDays) pkgQuery.durationDays = { ...(pkgQuery.durationDays || {}), $lte: Number(req.query.maxDays) };
+  // V0.1 filters through the India content directory (by slug).
+  //   place=<slug>      trips going to OR departing from that place
+  //   departureCity=<slug>  trips departing from that city (`from`/`to` stay date filters)
+  //   landscape=<slug>  trips going to any place in that landscape
+  const slugs = (v) => String(v).split(',').map((x) => x.trim()).filter(Boolean);
+  if (req.query.place) {
+    const ids = (await Place.find({ slug: { $in: slugs(req.query.place) } }, '_id').lean()).map((p) => p._id);
+    and.push({ $or: [{ destinationRefs: { $in: ids } }, { departureCityRefs: { $in: ids } }] });
+  }
+  if (req.query.departureCity) {
+    const ids = (await Place.find({ slug: { $in: slugs(req.query.departureCity) }, kind: 'city' }, '_id').lean()).map((p) => p._id);
+    and.push({ departureCityRefs: { $in: ids } });
+  }
+  if (req.query.landscape) {
+    const lids = (await Landscape.find({ slug: { $in: slugs(req.query.landscape) } }, '_id').lean()).map((l) => l._id);
+    const ids = (await Place.find({ landscapes: { $in: lids } }, '_id').lean()).map((p) => p._id);
+    and.push({ destinationRefs: { $in: ids } });
+  }
+  if (req.query.slugs) and.push({ slug: { $in: slugs(req.query.slugs).slice(0, 10) } });
   if (and.length) pkgQuery.$and = and;
 
   let rows = await listCards(pkgQuery);
@@ -76,6 +95,11 @@ router.get('/meta', asyncHandler(async (req, res) => {
     if (card.startLocation) cities.add(card.startLocation);
     for (const c of card.categories || []) categories.set(c, (categories.get(c) || 0) + 1);
   }
+  const placeFacet = (key) => {
+    const m = new Map();
+    for (const { card } of rows) for (const p of card.places[key]) m.set(p.slug, { slug: p.slug, name: p.name, tripCount: (m.get(p.slug)?.tripCount || 0) + 1 });
+    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
+  };
   const prices = rows.map((r) => r.card.priceFrom).filter((p) => p != null);
   res.json({
     success: true,
@@ -85,6 +109,8 @@ router.get('/meta', asyncHandler(async (req, res) => {
       categories: [...categories.entries()].map(([name, count]) => ({ name, count })),
       priceRange: prices.length ? { min: Math.min(...prices), max: Math.max(...prices) } : null,
       totalTrips: rows.length,
+      places: { destinations: placeFacet('destinations'), departureCities: placeFacet('departureCities') },
+      landscapes: [...new Set(rows.flatMap((r) => r.card.landscapes))].sort(),
     },
   });
 }));
@@ -99,6 +125,13 @@ router.get('/:slug', optionalAuth, asyncHandler(async (req, res) => {
   const isPublic = pkg.status === 'published' && operator && operator.status === 'approved';
   if (!isPublic && !isOwner && !isAdmin) throw notFoundErr('Trip not found');
 
+  // Organiser insights: one public page view. Owners, admins and obvious bots aren't counted.
+  // Fire-and-forget so a counting problem never breaks the page.
+  if (isPublic && !isOwner && !isAdmin && !/bot|crawl|spider|slurp|preview|monitor|lighthouse/i.test(req.get('user-agent') || '')) {
+    const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    ListingView.updateOne({ package: pkg._id, day }, { $inc: { count: 1 }, $setOnInsert: { operator: pkg.operator } }, { upsert: true }).catch(() => {});
+  }
+
   const deps = await TripDeparture.find({ package: pkg._id, status: { $ne: 'cancelled' }, startDate: { $gte: new Date() } }).sort({ startDate: 1 }).lean();
   const reviews = await ratingSummary(pkg._id);
 
@@ -108,7 +141,8 @@ router.get('/:slug', optionalAuth, asyncHandler(async (req, res) => {
     similar = rows.map((r) => r.card).slice(0, 4);
   }
 
-  const card = presentCard(pkg, deps, operator);
+  // Linked places from the India content directory (empty when not linked yet).
+  const card = withPlaces(presentCard(pkg, deps, operator), pkg, await placeLookup([pkg]));
   res.json({
     success: true,
     data: {

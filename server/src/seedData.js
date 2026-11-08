@@ -16,6 +16,18 @@ const IMG = {
 
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'GhumoDemo#2026';
 
+// The demo admin can approve organisers and read every booking, including real travellers'
+// contact details once real people use a deployment. So in production it never gets the
+// password published in the README: it uses DEMO_ADMIN_PASSWORD (or an explicitly set
+// DEMO_PASSWORD), otherwise a random password that nobody knows.
+function demoAdminPassword() {
+  if (process.env.DEMO_ADMIN_PASSWORD) return process.env.DEMO_ADMIN_PASSWORD;
+  if (process.env.NODE_ENV !== 'production' || process.env.DEMO_PASSWORD) return DEMO_PASSWORD;
+  console.warn('[seed] admin@ghumo.demo was given a random password because this is production and neither '
+    + 'DEMO_ADMIN_PASSWORD nor DEMO_PASSWORD is set. To use it, run: npm run set-password --prefix server -- admin@ghumo.demo');
+  return require('crypto').randomBytes(24).toString('base64url');
+}
+
 const day = (n) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d; };
 
 const OPERATORS = [
@@ -272,7 +284,7 @@ async function clearAll() {
 
 async function seed() {
   const users = {};
-  users.admin = await User.create({ name: 'Ghumo Admin', email: 'admin@ghumo.demo', passwordHash: DEMO_PASSWORD, role: 'admin', isDemo: true });
+  users.admin = await User.create({ name: 'Ghumo Admin', email: 'admin@ghumo.demo', passwordHash: demoAdminPassword(), role: 'admin', isDemo: true });
   users.traveler = await User.create({ name: 'Priya Sharma', email: 'traveller@ghumo.demo', passwordHash: DEMO_PASSWORD, role: 'traveler', phone: '+91 90000 00000', isDemo: true });
 
   const ops = {};
@@ -328,4 +340,4 @@ async function seedIfEmpty() {
   return true;
 }
 
-module.exports = { seed, seedIfEmpty, clearAll, DEMO_PASSWORD };
+module.exports = { seed, seedIfEmpty, clearAll, DEMO_PASSWORD, demoAdminPassword };

@@ -3,7 +3,7 @@ const { Operator, OperatorVerification, TripPackage, Booking, Report, User } = r
 const { verifyToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { badRequest, notFoundErr } = require('../utils/http');
+const { badRequest, notFoundErr, queryFilter } = require('../utils/http');
 const { escapeRegex } = require('../utils/text');
 
 router.use(verifyToken, requireRole('admin'));
@@ -24,7 +24,8 @@ router.get('/stats', asyncHandler(async (req, res) => {
 
 router.get('/operators', asyncHandler(async (req, res) => {
   const q = {};
-  if (req.query.status) q.status = req.query.status;
+  const status = queryFilter(req.query, 'status');
+  if (status) q.status = status;
   const ops = await Operator.find(q).sort({ status: 1, createdAt: -1 }).populate('owner', 'name email phone').lean();
   const ids = ops.map((o) => o._id);
   const [verifs, pkgCounts] = await Promise.all([
@@ -73,8 +74,10 @@ router.post('/operators/:id/verification', asyncHandler(async (req, res) => {
 
 router.get('/packages', asyncHandler(async (req, res) => {
   const q = {};
-  if (req.query.status) q.status = req.query.status;
-  if (req.query.q) q.title = new RegExp(escapeRegex(req.query.q), 'i');
+  const status = queryFilter(req.query, 'status');
+  if (status) q.status = status;
+  const text = queryFilter(req.query, 'q');
+  if (text) q.title = new RegExp(escapeRegex(text), 'i');
   const items = await TripPackage.find(q).sort({ updatedAt: -1 }).limit(300).populate('operator', 'businessName slug status').lean();
   res.json({ success: true, data: items });
 }));
@@ -95,9 +98,11 @@ router.post('/packages/:id/restore', asyncHandler(async (req, res) => {
 
 router.get('/bookings', asyncHandler(async (req, res) => {
   const q = {};
-  if (req.query.status) q.status = req.query.status;
-  if (req.query.q) {
-    const rx = new RegExp(escapeRegex(req.query.q), 'i');
+  const status = queryFilter(req.query, 'status');
+  if (status) q.status = status;
+  const text = queryFilter(req.query, 'q');
+  if (text) {
+    const rx = new RegExp(escapeRegex(text), 'i');
     q.$or = [{ reference: rx }, { 'contact.name': rx }, { 'contact.email': rx }];
   }
   const items = await Booking.find(q).sort({ createdAt: -1 }).limit(300)
@@ -107,7 +112,8 @@ router.get('/bookings', asyncHandler(async (req, res) => {
 
 router.get('/reports', asyncHandler(async (req, res) => {
   const q = {};
-  if (req.query.status) q.status = req.query.status;
+  const status = queryFilter(req.query, 'status');
+  if (status) q.status = status;
   const reports = await Report.find(q).sort({ createdAt: -1 }).populate('reporter', 'name email').lean();
   const pkgIds = reports.filter((r) => r.targetType === 'package').map((r) => r.targetId);
   const opIds = reports.filter((r) => r.targetType === 'operator').map((r) => r.targetId);

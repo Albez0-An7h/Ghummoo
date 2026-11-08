@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an improvement grounded in a real traveller or organiser problem.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ghumo AI favours usefulness over feature count. Please describe the problem first; the solution can be discussed.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who has this problem (traveller, organiser, admin, developer) and what do they do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Product rules
+      options:
+        - label: This does not require showing invented data (prices, seats, reviews, availability).
+          required: true
+        - label: This does not imply online payments unless a real provider is added.
+          required: true

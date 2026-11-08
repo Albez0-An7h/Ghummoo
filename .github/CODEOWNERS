@@ -1,0 +1,16 @@
+# Both project owners (see GOVERNANCE.md) review every change. GitHub requests a review from
+# both on each PR, including Dependabot PRs; with "Require review from Code Owners" on, one
+# owner's approval (other than the author's) is needed. An owner must have accepted repository
+# access for GitHub to honour these entries.
+*                                   @shekhar-narayan-mishra @vedansha07
+
+# Areas where a mistake costs the most: seats and bookings, auth, AI grounding, CI and governance.
+/server/src/services/seats.js       @shekhar-narayan-mishra @vedansha07
+/server/src/routes/bookings.js      @shekhar-narayan-mishra @vedansha07
+/server/src/middleware/             @shekhar-narayan-mishra @vedansha07
+/server/src/services/ai/            @shekhar-narayan-mishra @vedansha07
+/.github/                           @shekhar-narayan-mishra @vedansha07
+/GOVERNANCE.md                      @shekhar-narayan-mishra @vedansha07
+/SECURITY.md                        @shekhar-narayan-mishra @vedansha07
+/LICENSE*                           @shekhar-narayan-mishra @vedansha07
+/TRADEMARKS.md                      @shekhar-narayan-mishra @vedansha07

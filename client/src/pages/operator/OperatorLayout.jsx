@@ -1,22 +1,22 @@
-import { Outlet, useLocation, Link } from 'react-router-dom';
-import { LayoutDashboard, Package, Sparkles, Ticket, Building2 } from 'lucide-react';
+import { Outlet, Link } from 'react-router-dom';
+import { LayoutDashboard, Package, Sparkles, Ticket, Building2, BarChart3 } from 'lucide-react';
 import DashboardShell from '../../components/DashboardShell';
 import { Spinner, ErrorState, Notice } from '../../components/ui';
 import useAsync from '../../lib/useAsync';
 import api from '../../lib/api';
-import { OnboardingForm } from './ProfilePage';
+import Onboarding from './Onboarding';
 
 const NAV = [
   { to: '/operator', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/operator/packages', label: 'Packages', icon: Package },
   { to: '/operator/studio', label: 'AI Package Studio', icon: Sparkles },
   { to: '/operator/bookings', label: 'Bookings', icon: Ticket },
+  { to: '/operator/insights', label: 'Insights', icon: BarChart3 },
   { to: '/operator/profile', label: 'Business profile', icon: Building2 },
 ];
 
 export default function OperatorLayout() {
   const { data, error, loading, reload } = useAsync(() => api.get('/operator/profile'), []);
-  const { pathname } = useLocation();
   const operator = data?.operator || null;
   const verification = data?.verification || null;
   const reloadOperator = () => reload({ silent: true });
@@ -44,7 +44,7 @@ export default function OperatorLayout() {
   let content;
   if (loading && !data) content = <Spinner label="Loading your workspace" />;
   else if (error) content = <ErrorState error={error} onRetry={reload} />;
-  else if (!operator && !pathname.startsWith('/operator/profile')) content = <OnboardingForm onCreated={reloadOperator} />;
+  else if (!operator) content = <Onboarding onCreated={reloadOperator} />;
   else content = <Outlet context={{ operator, verification, reloadOperator }} />;
 
   return <DashboardShell nav={NAV} title="Operator" banner={banner}>{content}</DashboardShell>;

@@ -39,4 +39,12 @@ const toList = (v) => {
   return [];
 };
 
-module.exports = { slugify, uniqueSlug, bookingReference, escapeRegex, toList };
+// One CSV cell. Values starting with a character a spreadsheet treats as a formula (=, +, -, @,
+// tab or carriage return) are prefixed with ' so an exported manifest can't run formulas.
+const csvCell = (v) => {
+  let s = v == null ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return `"${s.replace(/"/g, '""')}"`;
+};
+
+module.exports = { slugify, uniqueSlug, bookingReference, escapeRegex, toList, csvCell };

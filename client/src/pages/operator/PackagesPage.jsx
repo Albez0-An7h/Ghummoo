@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Sparkles, Pencil, Eye, Trash2, CalendarDays, Users, Package } from 'lucide-react';
+import { Plus, Sparkles, Pencil, Eye, Trash2, CalendarDays, Users, Package, Copy, Archive, ArchiveRestore } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import useAsync from '../../lib/useAsync';
 import { money, shortDate, duration } from '../../lib/format';
@@ -10,20 +11,24 @@ const FILTERS = {
   all: () => true,
   published: (p) => p.status === 'published',
   drafts: (p) => p.status === 'draft' || p.status === 'unpublished',
+  archived: (p) => p.status === 'archived',
   removed: (p) => p.status === 'removed',
 };
+const DONE = { publish: 'Trip is live on the marketplace', unpublish: 'Trip unpublished', archive: 'Package archived. Existing bookings are unaffected.', restore: 'Restored as a draft' };
 
 export default function PackagesPage() {
   const { data, error, loading, reload } = useAsync(() => api.get('/operator/packages'), []);
   const [tab, setTab] = useState('all');
   const [busy, setBusy] = useState(null);
   const [toDelete, setToDelete] = useState(null);
+  const navigate = useNavigate();
 
   const act = async (pkg, action) => {
     setBusy(`${pkg._id}:${action}`);
     try {
-      await api.post(`/operator/packages/${pkg._id}/${action}`);
-      toast.success(action === 'publish' ? 'Trip is live on the marketplace' : 'Trip unpublished');
+      const res = await api.post(`/operator/packages/${pkg._id}/${action}`);
+      if (action === 'duplicate') { toast.success('Copy created as a draft'); navigate(`/operator/packages/${res._id}`); return; }
+      toast.success(DONE[action]);
       await reload({ silent: true });
     } catch (err) {
       toast.error(err.message, { duration: 6000 });
@@ -51,8 +56,9 @@ export default function PackagesPage() {
     { value: 'all', label: 'All', count: items.length },
     { value: 'published', label: 'Published', count: items.filter(FILTERS.published).length },
     { value: 'drafts', label: 'Drafts', count: items.filter(FILTERS.drafts).length },
+    { value: 'archived', label: 'Archived', count: items.filter(FILTERS.archived).length },
     { value: 'removed', label: 'Removed', count: items.filter(FILTERS.removed).length },
-  ];
+  ].filter((t) => t.value !== 'removed' || t.count > 0);
   const shown = items.filter(FILTERS[tab]);
 
   return (
@@ -66,8 +72,8 @@ export default function PackagesPage() {
         <>
           <Tabs tabs={tabs} value={tab} onChange={setTab} className="w-fit max-w-full" />
           {shown.length === 0 ? (
-            <EmptyState icon={Package} title={items.length ? 'Nothing here' : 'No packages yet'} action={!items.length && <Button to="/operator/packages/new"><Plus className="size-4" />Create a package</Button>}>
-              {items.length ? 'No packages match this filter.' : 'Create your first package manually or import one from a social-media caption.'}
+            <EmptyState icon={Package} title={items.length ? 'Nothing here' : 'No packages yet'} action={!items.length && <div className="flex flex-wrap justify-center gap-2"><Button to="/operator/studio"><Sparkles className="size-4" />Paste a description</Button><Button variant="secondary" to="/operator/packages/new"><Plus className="size-4" />Create manually</Button></div>}>
+              {items.length ? (tab === 'archived' ? 'Archived packages appear here. Archiving hides a trip without touching its bookings.' : 'No packages match this filter.') : 'Paste a trip description you already use, or build a package section by section. It stays a draft until you publish.'}
             </EmptyState>
           ) : (
             <div className="grid gap-4">
@@ -92,10 +98,14 @@ export default function PackagesPage() {
                       </div>
                       {p.status === 'removed' && p.removedReason && <p className="text-[13px] text-danger">Removed by moderators: {p.removedReason}</p>}
                       <div className="mt-auto flex flex-wrap gap-2 pt-1">
-                        {p.status !== 'removed' && <Button size="sm" variant="secondary" to={`/operator/packages/${p._id}`}><Pencil className="size-4" />Edit</Button>}
-                        {p.status === 'published' && <Button size="sm" variant="ghost" to={`/trips/${p.slug}`}><Eye className="size-4" />View</Button>}
+                        {p.status !== 'removed' && p.status !== 'archived' && <Button size="sm" variant="secondary" to={`/operator/packages/${p._id}`}><Pencil className="size-4" />Edit</Button>}
+                        {p.status !== 'removed' && p.status !== 'archived' && <Button size="sm" variant="ghost" to={`/trips/${p.slug}`}><Eye className="size-4" />{p.status === 'published' ? 'View' : 'Preview'}</Button>}
                         {(p.status === 'draft' || p.status === 'unpublished') && <Button size="sm" loading={busy === `${p._id}:publish`} onClick={() => act(p, 'publish')}>Publish</Button>}
                         {p.status === 'published' && <Button size="sm" variant="ghost" loading={busy === `${p._id}:unpublish`} onClick={() => act(p, 'unpublish')}>Unpublish</Button>}
+                        {p.status !== 'removed' && <Button size="sm" variant="ghost" loading={busy === `${p._id}:duplicate`} onClick={() => act(p, 'duplicate')}><Copy className="size-4" />Duplicate</Button>}
+                        {p.status === 'archived'
+                          ? <Button size="sm" variant="secondary" loading={busy === `${p._id}:restore`} onClick={() => act(p, 'restore')}><ArchiveRestore className="size-4" />Restore</Button>
+                          : p.status !== 'removed' && <Button size="sm" variant="ghost" loading={busy === `${p._id}:archive`} onClick={() => act(p, 'archive')}><Archive className="size-4" />Archive</Button>}
                         {p.status !== 'published' && p.status !== 'removed' && <Button size="sm" variant="ghost" className="text-danger" onClick={() => setToDelete(p)}><Trash2 className="size-4" />Delete</Button>}
                       </div>
                     </div>

@@ -5,6 +5,8 @@ const operatorSchema = new mongoose.Schema(
   {
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     businessName: { type: String, required: [true, 'Business name is required'], trim: true, maxlength: 120 },
+    // What kind of organiser this is (V0.1 onboarding). Optional for profiles created earlier.
+    organiserType: { type: String, enum: ['independent', 'company', 'community', 'creator', null], default: null },
     slug: { type: String, required: true, unique: true, index: true },
     description: { type: String, trim: true, maxlength: 2000, default: '' },
     contactEmail: { type: String, trim: true, lowercase: true, default: '' },
@@ -17,7 +19,8 @@ const operatorSchema = new mongoose.Schema(
     // Listing approval by an admin. Only approved operators appear publicly.
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
     statusNote: { type: String, default: '' },
-    // Set only when an admin has reviewed verification documents. Drives the "Verified" badge.
+    // Set only when an admin has reviewed verification documents. The public "Verified" badge
+    // also requires listing approval (see services/trips.js#isVerified).
     verifiedAt: { type: Date, default: null },
     isDemo: { type: Boolean, default: false },
   },

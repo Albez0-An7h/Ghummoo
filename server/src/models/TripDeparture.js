@@ -8,7 +8,12 @@ const departureSchema = new mongoose.Schema(
     endDate: { type: Date, required: [true, 'Return date is required'] },
     price: { type: Number, required: [true, 'Price is required'], min: 0 },
     totalCapacity: { type: Number, required: [true, 'Capacity is required'], min: 1, max: 500 },
+    // Seats not held by a requested or confirmed booking. Changed only through services/seats.js.
     seatsAvailable: { type: Number, required: true, min: 0 },
+    // Seats on confirmed bookings. Kept in step by the booking status transitions
+    // (confirm +, cancel/reject of a confirmed booking −) and recomputable from bookings
+    // (migrations/v0_1.js). Invariant: confirmedSeats <= totalCapacity - seatsAvailable.
+    confirmedSeats: { type: Number, default: 0, min: 0 },
     bookingDeadline: { type: Date, default: null },
     pickupPoint: { type: String, trim: true, default: '' },
     reportingTime: { type: String, trim: true, default: '' },

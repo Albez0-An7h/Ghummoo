@@ -9,7 +9,12 @@ import api from '../lib/api';
 import useAsync from '../lib/useAsync';
 import { useAuth } from '../lib/auth';
 import { Button, Badge, SafeImage, Spinner, EmptyState, Notice, Modal, Select, Textarea, cx } from '../components/ui';
-import TripCard from '../components/TripCard';
+import { TripCard, SaveToggle } from '../design/Cards';
+import { CompareToggle } from '../design/Compare';
+import { AvailabilityBadge } from '../design/Booking';
+import { AIInput } from '../design/Inputs';
+import { DemoBadge } from '../design/Feedback';
+import { askTripQuestion } from '../lib/discover';
 import { money, dateRange, durationLong, date, weekdayDate, CATEGORY_LABELS } from '../lib/format';
 
 function Section({ id, title, children, className }) {
@@ -84,7 +89,7 @@ function BookingPanel({ trip, departureId, setDepartureId, seats, setSeats, onBo
                   <span className="min-w-0">
                     <span className="block text-[15px] font-bold">{dateRange(d.startDate, d.endDate)}</span>
                     <span className={cx('block text-[13px] font-semibold', !d.isBookable ? 'text-subtle' : low ? 'text-warning' : 'text-subtle')}>
-                      {d.status === 'closed' ? 'Bookings closed' : d.seatsAvailable === 0 ? 'Sold out' : !d.isBookable ? 'Booking deadline passed' : `${d.seatsAvailable} of ${d.totalCapacity} seats left`}
+                      {d.availability === 'available' ? `${d.seatsAvailable} of ${d.totalCapacity} seats left` : { sold_out: 'Sold out', booking_closed: 'Booking deadline passed', closed: 'Not taking bookings', cancelled: 'Cancelled', departed: 'Departed' }[d.availability] || 'Not bookable'}
                     </span>
                   </span>
                   <span className="num shrink-0 text-[15px] font-extrabold">{money(d.price, trip.currency)}</span>
@@ -117,6 +122,53 @@ function BookingPanel({ trip, departureId, setDepartureId, seats, setSeats, onBo
         </>
       )}
     </div>
+  );
+}
+
+/* "Ask this trip": answered on the server from this listing only (AI when configured, keyword
+   matching otherwise). Answers cite the listing section they came from; anything the listing
+   doesn't cover gets "This detail hasn't been confirmed by the organiser." */
+function AskThisTrip({ trip }) {
+  const [qa, setQa] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const ask = async (q) => {
+    setBusy(true);
+    try {
+      const r = await askTripQuestion(trip.slug, q);
+      setQa((cur) => [{ q, ...r }, ...cur].slice(0, 5));
+    } catch (e) {
+      setQa((cur) => [{ q, error: e.status === 429 ? 'You\'ve asked a lot of questions in a short time. Please wait a minute and try again.' : e.message }, ...cur].slice(0, 5));
+    } finally { setBusy(false); }
+  };
+  return (
+    <section id="ask" aria-labelledby="ask-h" className="mt-10 scroll-mt-28 rounded-[28px] bg-gradient-to-br from-peach/70 to-white p-5 ring-1 ring-line sm:p-6">
+      <h2 id="ask-h" className="text-xl font-extrabold sm:text-2xl">Ask this trip</h2>
+      <p className="mt-1 text-sm text-subtle">Answers come only from this listing and the organiser's details. If the organiser hasn't said, we'll tell you.</p>
+      <AIInput className="mt-4" label="Your question" placeholder="Is food included? Where is pickup?" onSubmit={ask} busy={busy}
+        suggestions={['Which meals are included?', 'Where is the pickup point?', 'What is the cancellation policy?', 'What is not included?']}
+        note="We never guess safety, availability, meals, transport, stays or refunds." buttonLabel="Ask" />
+      <div aria-live="polite" className="mt-4 space-y-3">
+        {busy && <div className="h-16 animate-pulse rounded-2xl bg-white/70 motion-reduce:animate-none" aria-hidden />}
+        {qa.map((r, i) => (
+          <div key={`${r.q}-${i}`} className="rounded-2xl bg-white p-4 ring-1 ring-line">
+            <p className="text-sm font-extrabold">{r.q}</p>
+            {r.error ? <p className="mt-1.5 text-[15px] text-danger">{r.error}</p> : (
+              <>
+                <p className={cx('mt-1.5 text-[15px]', r.answered ? 'text-ink' : 'italic text-subtle')}>{r.answer}</p>
+                {r.sources?.length > 0 && (
+                  <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-bold text-subtle">From the listing:
+                    {r.sources.map((s) => <a key={s.key} href={`#${s.anchor}`} className="rounded-full bg-peach px-2 py-0.5 text-brand-ink hover:underline">{s.label}</a>)}
+                  </p>
+                )}
+                {!r.answered && <a href="#organiser" className="mt-2 inline-block text-xs font-bold text-brand-ink underline">Ask the organiser directly</a>}
+                {r.notice && <p className="mt-2 text-xs text-subtle">{r.notice}</p>}
+                {r.mode === 'basic' && !r.notice && <p className="mt-2 text-xs text-subtle">Matched to the listing without AI.</p>}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -166,6 +218,12 @@ export default function TripDetailPage() {
     if (trip) { setDepartureId(trip.departures.find((d) => d.isBookable)?._id || null); setSeats(1); setOpenDays({ 0: true }); }
   }, [trip]);
   useEffect(() => { if (trip) document.title = `${trip.title} · Ghumo AI`; return () => { document.title = 'Ghumo AI: Group trips, minus the chaos'; }; }, [trip]);
+  // Lift the compare tray above the mobile booking bar on this page.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--ghumo-bottom-bar', window.matchMedia('(max-width: 1023.98px)').matches ? '76px' : '0px');
+    return () => root.style.removeProperty('--ghumo-bottom-bar');
+  }, []);
 
   const images = useMemo(() => (trip ? [...new Set([trip.coverImage, ...(trip.images || [])].filter(Boolean))] : []), [trip]);
 
@@ -202,9 +260,9 @@ export default function TripDetailPage() {
 
         <div className="mt-8 lg:grid lg:grid-cols-[1fr_380px] lg:gap-12">
           <div className="min-w-0">
-            <div className="flex flex-wrap gap-2">
-              {trip.categories?.map((c) => <Badge key={c} tone="brand">{CATEGORY_LABELS[c] || c}</Badge>)}
-              {trip.isDemo && <Badge tone="dark">Demo listing</Badge>}
+            <div className="flex flex-wrap items-center gap-3">
+              {trip.categories?.length > 0 && <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-brand-ink">{trip.categories.map((c) => CATEGORY_LABELS[c] || c).join(' · ')}</p>}
+              {trip.isDemo && <DemoBadge />}
             </div>
             <h1 className="mt-3 text-[32px] font-extrabold leading-[1.08] sm:text-[44px]">{trip.title}</h1>
             <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] font-semibold text-subtle">
@@ -212,6 +270,20 @@ export default function TripDetailPage() {
               <span className="flex items-center gap-1.5"><Clock className="size-4 text-brand" />{durationLong(trip.durationDays, trip.durationNights)}</span>
               {trip.reviews.count > 0 && <span className="flex items-center gap-1"><Star className="size-4 fill-brand text-brand" />{trip.reviews.average} ({trip.reviews.count})</span>}
             </p>
+
+            {(trip.places?.destinations?.length > 0 || trip.places?.departureCities?.length > 0) && (
+              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] font-bold" aria-label="Places on this trip">
+                {trip.places.destinations.map((p) => <Link key={p.slug} to={`/places/${p.slug}`} className="inline-flex min-h-8 items-center gap-1 underline decoration-line decoration-2 underline-offset-4 hover:text-brand-ink hover:decoration-brand">Guide: {p.name}</Link>)}
+                {trip.places.departureCities.map((p) => <Link key={`from-${p.slug}`} to={`/places/${p.slug}`} className="inline-flex min-h-8 items-center underline decoration-line decoration-2 underline-offset-4 hover:text-brand-ink hover:decoration-brand">Leaves from {p.name}</Link>)}
+              </p>
+            )}
+            {!trip.preview && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <SaveToggle trip={trip} />
+                <CompareToggle trip={trip} />
+                <a href="#ask" className="inline-flex h-9 items-center rounded-full bg-white px-3 text-xs font-extrabold ring-1 ring-line hover:ring-brand-soft">Ask this trip</a>
+              </div>
+            )}
 
             <Link to={`/organisers/${op.slug}`} className="mt-6 flex items-center gap-3 rounded-2xl border border-line bg-white p-3 pr-4 transition hover:border-brand-soft sm:inline-flex">
               {op.logoUrl ? <SafeImage src={op.logoUrl} alt="" className="size-11 rounded-xl" /> : <div className="grid size-11 place-items-center rounded-xl bg-peach text-lg font-extrabold text-brand-ink">{op.businessName[0]}</div>}
@@ -232,7 +304,7 @@ export default function TripDetailPage() {
             </div>
 
             <nav className="no-scrollbar sticky top-16 z-20 -mx-4 mt-8 flex gap-1 overflow-x-auto bg-ivory/90 px-4 py-2 backdrop-blur lg:top-[72px]" aria-label="Sections">
-              {[['overview', 'Overview'], ['itinerary', 'Itinerary'], ['stay', 'Stay & travel'], ['inclusions', "What's included"], ['policy', 'Policies'], ['organiser', 'Organiser']].map(([id, l]) => (
+              {[['overview', 'Overview'], ['itinerary', 'Itinerary'], ['stay', 'Stay & travel'], ['inclusions', "What's included"], ['policy', 'Policies'], ['ask', 'Ask this trip'], ['organiser', 'Organiser']].map(([id, l]) => (
                 <a key={id} href={`#${id}`} className="shrink-0 rounded-full px-3.5 py-1.5 text-sm font-bold text-subtle hover:bg-sand hover:text-ink">{l}</a>
               ))}
             </nav>
@@ -325,13 +397,15 @@ export default function TripDetailPage() {
                     {trip.departures.map((d) => (
                       <li key={d._id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-[14px]">
                         <span className="flex items-center gap-2 font-bold"><CalendarDays className="size-4 text-brand" />{weekdayDate(d.startDate)} → {weekdayDate(d.endDate)}</span>
-                        <span className="flex items-center gap-4"><span className="text-subtle">{d.isBookable ? `${d.seatsAvailable} seats left` : d.seatsAvailable === 0 ? 'Sold out' : 'Closed'}</span><span className="num font-extrabold">{money(d.price, trip.currency)}</span></span>
+                        <span className="flex items-center gap-4"><AvailabilityBadge departure={d} /><span className="num font-extrabold">{money(d.price, trip.currency)}</span></span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
             </Section>
+
+            {!trip.preview && <AskThisTrip trip={trip} />}
 
             <Section id="organiser" title="Your organiser" className="mt-10">
               <div className="rounded-3xl border border-line bg-white p-5 sm:p-6">
@@ -385,7 +459,7 @@ export default function TripDetailPage() {
         {trip.similar?.length > 0 && (
           <section className="mt-20">
             <h2 className="mb-5 text-2xl font-extrabold">Similar trips</h2>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{trip.similar.map((t) => <TripCard key={t._id} trip={t} compact />)}</div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{trip.similar.map((t) => <TripCard key={t._id} trip={t} />)}</div>
           </section>
         )}
       </div>
