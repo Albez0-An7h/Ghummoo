@@ -1,6 +1,6 @@
 # Ghumo AI: licensing recommendation
 
-*Status: **REQUIRES OWNER APPROVAL**. No licence has been applied. This is a technical summary to help the owners decide. It is **not legal advice**. For anything that matters commercially, ask a lawyer (in India, an IP or technology lawyer).*
+*Status: **DECIDED, 8 November 2026: AGPL-3.0-only for the repository**, chosen by the owners. `LICENSE` (the verbatim gnu.org text), `TRADEMARKS.md` and the `package.json` licence fields are prepared locally, waiting for approval to commit. Copyright line: "Copyright (C) 2026 shekhar-narayan-mishra and vedansha07". Still open: the written copyright agreement (L1), legacy contributors (L4), DCO or CLA (L6) and GSAP (§3). This is not legal advice.*
 
 ## 1. Why this is urgent
 
@@ -15,11 +15,12 @@ A licence must exist **before** contributors are invited.
 
 | Question | Why it matters | Who answers |
 | --- | --- | --- |
-| Who owns the code? All 36 commits are by `shekhar-narayan-mishra`, but there are two project owners. Is there a written founders' agreement assigning IP to a company, or are the founders joint owners? | Only the owners can license it. Joint owners should both agree in writing | Both founders |
-| What do the **CoNSTruct 2.0** rules say about IP and licensing of submissions? | Some competitions claim rights, require an open licence or restrict reuse | Founders, from the competition terms |
+| Who holds the copyright? `shekhar-narayan-mishra` and `vedansha07` are both project owners, but all 36 commits are by `shekhar-narayan-mishra`. Is there a written founders' agreement assigning IP to a company, or are the founders joint owners? | Only the copyright holders can license the code. Joint owners should both agree in writing | Both founders |
 | Did anyone else write code in the legacy *Ghummoo* project (team members, course work, a college) that is still present? | Their contributions need their permission, or must be removed | Founders |
 | Is any code copied from tutorials, Stack Overflow or other projects? | Stack Overflow snippets are CC BY-SA, and other projects carry their own licences | A quick founder review. This audit found no vendored third-party code beyond npm dependencies |
 | Who wrote the Explore India content and the landmark illustrations? | Content and art can be licensed separately from code | Founders |
+
+*Resolved: CoNSTruct 2.0 was a competition the project took part in, with no ownership restrictions or agreements (confirmed by the owners on 8 November 2026).*
 
 ## 3. What third-party dependencies allow
 
@@ -29,6 +30,12 @@ Details are in [SECURITY_AUDIT.md](SECURITY_AUDIT.md) §5.
 - **GSAP:** its own "no-charge" licence, not OSI-approved. It doesn't stop the project being licensed, but redistributors must follow GSAP's terms. It is used only for lazy scroll scenes and could be replaced.
 - **MongoDB binary (SSPL):** downloaded at runtime by `mongodb-memory-server` and never stored in the repository. It matters only if someone builds and distributes an image that contains it.
 - **Unsplash photos:** hotlinked, under the Unsplash Licence. They are outside any grant the project makes.
+
+### GSAP and the AGPL (open item)
+
+The built client bundles GSAP, whose "standard no-charge" licence is not GPL-compatible. The owners can license their own code however they like, but someone who redistributes the combined app under the AGPL could be in conflict with GSAP's terms. GSAP is used in exactly one module, `client/src/motion/useSceneMotion.js`, for decorative scroll motion. There are two ways to resolve this:
+1. **Replace GSAP** with CSS scroll-driven animations and `IntersectionObserver`, keeping the reduced-motion behaviour. This is issue `medium/14`, and it is the cleanest option: the whole stack becomes open source.
+2. **Add an AGPL section 7 "additional permission"** allowing the code to be combined with GSAP. Only the copyright holders can grant it, and the wording should come from a lawyer.
 
 ## 4. Licences compared
 

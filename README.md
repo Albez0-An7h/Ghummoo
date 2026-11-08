@@ -4,7 +4,7 @@
 
 Ghumo AI is a marketplace for **fixed-departure group trips in India run by independent organisers**. Travellers discover, compare and request bookings in one place, instead of piecing trips together from Instagram posts, WhatsApp chats and PDFs. Organisers run their packages, departures, seats, booking requests and trip updates from one dashboard. **AI Package Studio** turns an organiser's unstructured caption into a structured listing draft, and it never invents a price, date or capacity.
 
-> **Project status:** V0.1, pre-release. It is not running in production with real organisers yet, and there is no payment gateway (see [Current limitations](#current-limitations)). **The licence is not chosen yet**; see [Licence](#licence).
+> **Project status:** V0.1, pre-release. It is not running in production with real organisers yet, and there is no payment gateway (see [Current limitations](#current-limitations)). Licensed under **AGPL-3.0**; see [Licence](#licence).
 
 ## The problem
 
@@ -129,7 +129,7 @@ See [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md), and [docs/TESTING_AND_CI.md]
 
 ## Contributing
 
-Contributions go through `feature/*` or `fix/*` branches into `staging`, then into `main` via release PRs. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the issue roadmap in [docs/GITHUB_ISSUE_ROADMAP.md](docs/GITHUB_ISSUE_ROADMAP.md). Report security problems privately ([SECURITY.md](SECURITY.md)). Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions go through `feature/*` or `fix/*` branches into `staging`, then into `main` via release PRs. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the issue roadmap in [docs/GITHUB_ISSUE_ROADMAP.md](docs/GITHUB_ISSUE_ROADMAP.md). Report security problems privately ([SECURITY.md](SECURITY.md)). The project is run by two owners, [@shekhar-narayan-mishra](https://github.com/shekhar-narayan-mishra) and [@vedansha07](https://github.com/vedansha07); see [GOVERNANCE.md](GOVERNANCE.md). Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Roadmap
 
@@ -156,4 +156,8 @@ Ghumo AI began as the *Ghummoo* local-guide project and was rebuilt for CoNSTruc
 
 ## Licence
 
-**No licence has been granted yet.** The code is publicly visible, but until a `LICENSE` file is added, all rights are reserved by the owners. The options under consideration are in [docs/LICENSING_RECOMMENDATION.md](docs/LICENSING_RECOMMENDATION.md). The "Ghumo AI" name and brand assets are not covered by any code licence.
+Copyright (C) 2026 shekhar-narayan-mishra and vedansha07.
+
+Ghumo AI is free software: you can redistribute it and/or modify it under the terms of the **GNU Affero General Public License, version 3** ([LICENSE](LICENSE), SPDX `AGPL-3.0-only`). It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+In short: you may use, study, change and share the code. If you run a modified version for other people over a network, you must offer them its source code under the same licence. The "Ghumo AI" name, logo and brand illustrations are **not** covered; see [TRADEMARKS.md](TRADEMARKS.md). Why this licence was chosen is explained in [docs/LICENSING_RECOMMENDATION.md](docs/LICENSING_RECOMMENDATION.md).

@@ -23,6 +23,7 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 - The e2e login helper waits for the sign-in response before navigating, which removes a flaky failure.
 
 ### Added
+- The project is licensed under the GNU Affero General Public License v3.0 (`LICENSE`, `AGPL-3.0-only` in every `package.json`). Copyright (C) 2026 shekhar-narayan-mishra and vedansha07. `TRADEMARKS.md` keeps the Ghumo AI name and brand outside the code licence.
 - CI (lint, tests, build, dependency audit, Playwright e2e, secret scan), CodeQL and Dependabot.
 - Contributor documentation and templates: CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, PR and issue templates, CODEOWNERS.
 - Project, security, open-source and licensing documents in `docs/`, plus contributor issue drafts in `docs/github-issues/`.

@@ -2,7 +2,7 @@
 
 Thanks for helping. Ghumo AI is a marketplace for fixed-departure group trips in India, run by independent organisers. This guide explains how to go from "I found an issue" to "my change is merged".
 
-> **Licence status.** The project's licence has not been chosen yet (see `docs/LICENSING_RECOMMENDATION.md`). Until a `LICENSE` file exists, maintainers will not merge outside contributions. You are welcome to open issues and discuss them in the meantime.
+> **Licence.** Ghumo AI is licensed under the [GNU AGPL-3.0](LICENSE). The owners are still deciding how contributors confirm their right to contribute: a DCO sign-off or a CLA (see "Licensing of contributions" below). Until that is settled, maintainers will not merge outside contributions. You are welcome to open issues, discuss them and prepare PRs in the meantime.
 
 ## The ten steps
 
@@ -62,11 +62,11 @@ Use the conventional style already in the history: `feat: …`, `fix: …`, `tes
 
 ## Licensing of contributions
 
-Once a licence is chosen, contributions are accepted under that licence. The owners will also decide between:
-- the Developer Certificate of Origin, where you sign off each commit with `git commit -s`;
-- a contributor licence agreement.
+Contributions are accepted under the project's licence, the [GNU AGPL-3.0](LICENSE): you license your contribution to everyone under the same terms as the rest of the code. The owners are still deciding whether contributors also:
+- sign off each commit under the Developer Certificate of Origin (`git commit -s`); or
+- sign a contributor licence agreement.
 
-This file will be updated with the exact requirement. Only submit work you wrote yourself or have the right to contribute.
+This file will be updated with the exact requirement before the first outside contribution is merged. Only submit work you wrote yourself or have the right to contribute.
 
 ## Code review checklist (for reviewers)
 
@@ -78,6 +78,10 @@ This file will be updated with the exact requirement. Only submit work you wrote
 - [ ] No unnecessary dependency. Any API contract change is documented.
 - [ ] UI: keyboard, mobile width, reduced motion and colour tokens checked.
 - [ ] CI is green.
+
+## Who reviews
+
+Both project owners, `@shekhar-narayan-mishra` and `@vedansha07`, are code owners and are requested automatically on every PR. Either can approve and merge. How owner-level decisions are made is described in [GOVERNANCE.md](GOVERNANCE.md).
 
 ## Getting help
 
