@@ -67,9 +67,9 @@ These settings fit a team of two maintainers. Configure them in GitHub → **Set
 | Block force pushes | Yes | Yes |
 | Restrict deletions | Yes | Yes |
 | Require linear history | No (release merges are merge commits) | Yes (squash merges only) |
-| Bypass list | None. With two maintainers, the second person reviews | Repository admins, for emergencies only |
+| Bypass list | **None.** Rulesets apply to admins unless they are on this list; keeping it empty means both owners also go through reviewed PRs | Repository admins, for emergencies only |
 
-With a single active maintainer, one approval is impossible: you can't approve your own PR. In that case, set required approvals to **0** on `staging` but keep the PR requirement and the required checks. Restore it to 1 once the second maintainer reviews regularly.
+Both owners, `shekhar-narayan-mishra` and `vedansha07`, are code owners ([GOVERNANCE.md](../GOVERNANCE.md)), so each one's PR is approved by the other. If only one maintainer is active for a while, one approval is impossible: you can't approve your own PR. In that case, set required approvals to **0** on `staging` but keep the PR requirement and the required checks. Restore it to 1 once the second maintainer reviews regularly.
 
 ## 5. Versioning
 

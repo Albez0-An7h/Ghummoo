@@ -41,18 +41,17 @@
 - **NEXT STEP:** M3.
 
 ### [ ] M3. Confirm intellectual-property ownership (both owners)
-- **WHAT:** Agree in writing who owns the code, and check the competition terms.
-- **WHY:** Only the owners can license the code. The project started as a CoNSTruct 2.0 entry built on the earlier *Ghummoo* project, and competition or college rules sometimes claim rights.
-- **WHERE:** An email or a shared document between both owners; the CoNSTruct 2.0 rules and terms.
+- **WHAT:** Agree in writing who holds the copyright, and check that nobody else contributed to the earlier *Ghummoo* code.
+- **WHY:** Only the copyright holders can license the code. Both of you are owners and admins ([GOVERNANCE.md](../GOVERNANCE.md)), but every commit is by `shekhar-narayan-mishra`, so the shared ownership should be written down. (CoNSTruct 2.0 is resolved: no ownership restrictions.)
+- **WHERE:** An email or a shared document between `shekhar-narayan-mishra` and `vedansha07`.
 - **HOW:**
-  1. Find the CoNSTruct 2.0 terms and look for "intellectual property", "ownership", "licence" or "open source".
-  2. List everyone who wrote code in *Ghummoo* (`backup/ghummoo-legacy`). If anyone besides the owners did, get their written permission or remove their code.
-  3. Write one paragraph that both owners reply "agreed" to: "Copyright in the Ghumo AI code is held by <A and B / company name>. We agree to license it under <licence>."
-- **INPUT:** The owners' names or company name; the competition terms.
+  1. List everyone who wrote code, designs or content in *Ghummoo* (`backup/ghummoo-legacy`, commits before `56ad883`). If anyone besides the two owners did (team-mates, course work, a college), get their written permission or remove their work.
+  2. Write one paragraph that both owners reply "agreed" to: "Copyright in the Ghumo AI code is held jointly by <full name of shekhar-narayan-mishra> and <full name of vedansha07> (or: by <company name>). Both must agree before it is licensed, relicensed or transferred."
+- **INPUT:** Your full legal names, or the company name.
 - **SUCCESS CHECK:** A written agreement exists, and no third-party claims remain.
 - **NEXT STEP:** M4.
 
-### [ ] M4. Choose the open-source scope and the licence
+### [x] M4. Choose the open-source scope and the licence: **decided, AGPL-3.0-only (8 November 2026)**
 - **WHAT:** Pick option 1, 2 or 3 in [OPEN_SOURCE_STRATEGY.md](OPEN_SOURCE_STRATEGY.md) §4, and the matching licences in [LICENSING_RECOMMENDATION.md](LICENSING_RECOMMENDATION.md) §5. Decide between DCO and CLA.
 - **WHY:** The repository is public and forked but has no licence, so contributors can't safely contribute.
 - **WHERE:** A discussion between the owners. A lawyer is advisable for the AGPL and CLA question.
@@ -119,7 +118,7 @@
   4. Tick **Require a pull request before merging**:
      - Required approvals: **1**;
      - tick **Dismiss stale pull request approvals when new commits are pushed**;
-     - tick **Require review from Code Owners** (after G6).
+     - tick **Require review from Code Owners**.
   5. Tick **Require status checks to pass**:
      - tick **Require branches to be up to date before merging**;
      - **Add checks**: `Lint, test, build`, `End-to-end (Playwright)`, `Secret scan`, `analyze`. They appear in the list only after the workflows have run once (G4).
@@ -133,12 +132,27 @@
 - **SUCCESS CHECK:** `git push origin main` from a local commit is rejected with "protected branch".
 - **NEXT STEP:** G6.
 
-### [ ] G6. Confirm `vedansha07` has the right access
-- **WHERE:** **Settings → Collaborators and teams**.
-- **HOW:** `.github/CODEOWNERS` already lists `@shekhar-narayan-mishra` and `@vedansha07`. GitHub only honours a code owner who has **write** access, so make sure `vedansha07`'s role is **Write** or higher: **Maintain** for a co-maintainer, **Admin** if they should change settings. If they still have a pending invitation, they must accept it from their GitHub notifications.
-- **INPUT:** The role you want them to have.
-- **SUCCESS CHECK:** Open `.github/CODEOWNERS` on GitHub. No warning banner appears ("unknown owner" or "no write access"), and new PRs request a review from both of you.
-- **NEXT STEP:** G7.
+### [ ] G6. Give `vedansha07` admin access (owner-level: both owners agree)
+- **WHAT:** Make both owners genuine admins of the repository.
+- **WHY:** [GOVERNANCE.md](../GOVERNANCE.md) treats both owners as admins. **A repository owned by a personal account cannot have a second admin**: it has one owner, and every collaborator gets the same fixed permissions (push, review, merge, manage issues), with no access to settings, rulesets or visibility. Admin roles exist only in organisation-owned repositories.
+- **STEP 1, check the current state:** Go to https://github.com/shekhar-narayan-mishra/Ghummoo/settings/access (Settings → **Collaborators**). `vedansha07` should be listed as **Collaborator**. If it says "Pending invite", they must accept it at https://github.com/notifications or from the invitation email. Under a personal account, this is the most access possible.
+- **STEP 2, create an organisation** (only `shekhar-narayan-mishra` can start this):
+  1. Avatar (top right) → **Your organizations** → **New organization** → **Free**.
+  2. Organisation name, e.g. `ghumo-ai` (check availability); contact email; "This organization belongs to: **My personal account**". Then **Next**, and skip adding members on this screen.
+  3. Org → **People** → **Invite member** → `vedansha07` → role **Owner** → **Send invitation**. `vedansha07` accepts it from their notifications.
+- **STEP 3, transfer the repository:**
+  1. https://github.com/shekhar-narayan-mishra/Ghummoo → **Settings → General** → scroll to **Danger Zone** → **Transfer ownership**.
+  2. Choose "Select one of my organizations" → the new organisation → type `shekhar-narayan-mishra/Ghummoo` to confirm → **I understand, transfer this repository**.
+  3. Both of you are organisation owners, so both automatically have **Admin** on the repository. You can check this under the repository's **Settings → Collaborators and teams**.
+- **WHAT THE TRANSFER CHANGES** (tell me after it's done and I'll prepare the follow-up edits for your approval):
+  - The URL becomes `github.com/<org>/Ghummoo`. GitHub redirects the old URL, issue links and `git` remotes, but update your remote anyway: `git remote set-url origin git@github.com:<org>/Ghummoo.git`.
+  - Repository references in `SECURITY.md`, `.github/ISSUE_TEMPLATE/config.yml`, `README.md`, `docs/LOCAL_SETUP.md` and `scripts/github/*.sh` (`REPO=`) must be updated.
+  - **gitleaks-action needs a free licence key for organisation repositories.** Request one at gitleaks.io, then add it under **Settings → Secrets and variables → Actions → New repository secret**, named `GITLEAKS_LICENSE`, and pass it in `ci.yml`. Otherwise the Secret scan job fails.
+  - Open PRs, issues, stars and the fork move with the repository. Re-check the Actions settings (G4) and rulesets (G5) afterwards.
+- **IF YOU DON'T TRANSFER:** `vedansha07` stays a collaborator. They can review, approve and merge, and CODEOWNERS works for them, but only `shekhar-narayan-mishra` can change settings. In that case [GOVERNANCE.md](../GOVERNANCE.md) needs to say so; tell me and I'll update it.
+- **INPUT:** Agreement from both owners, and the organisation name.
+- **SUCCESS CHECK:** `vedansha07` opens the repository's **Settings** tab and sees **Rules** and **Collaborators and teams**. Opening `.github/CODEOWNERS` on GitHub shows no "unknown owner" warning.
+- **NEXT STEP:** G7. Do G6 **before** G5 if you transfer, because the rulesets are easier to set up once, in the final location.
 
 ### [ ] G7. Set the code-of-conduct contact
 - **WHERE:** `CODE_OF_CONDUCT.md`, the line containing `CONDUCT_CONTACT_EMAIL`.

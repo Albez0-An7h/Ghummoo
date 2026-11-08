@@ -11,7 +11,7 @@
 | 5 Open-source architecture | PROPOSED: [OPEN_SOURCE_ARCHITECTURE.md](OPEN_SOURCE_ARCHITECTURE.md). Extraction (hard/01) is BLOCKED on the licence |
 | 6 Implementation and refactoring | COMPLETED for the verified bug and security fixes (below). Larger refactors are filed as issues |
 | 7 Security and dependency audit | COMPLETED: [SECURITY_AUDIT.md](SECURITY_AUDIT.md) |
-| 8 Licensing | PROPOSED, REQUIRES APPROVAL: [LICENSING_RECOMMENDATION.md](LICENSING_RECOMMENDATION.md). No licence applied |
+| 8 Licensing | **DECIDED: AGPL-3.0-only.** `LICENSE`, `TRADEMARKS.md` and the licence fields are prepared locally; REQUIRES COMMIT APPROVAL. Open: DCO or CLA, and GSAP compatibility (medium/14) |
 | 9 Documentation | COMPLETED |
 | 10 Testing and CI | COMPLETED locally: [TESTING_AND_CI.md](TESTING_AND_CI.md). CI has not run on GitHub (REQUIRES PUSH APPROVAL) |
 | 11 Branching | Documented: [BRANCHING_AND_RELEASE_WORKFLOW.md](BRANCHING_AND_RELEASE_WORKFLOW.md). `staging` and protection REQUIRE MANUAL ACTION |
@@ -87,7 +87,7 @@ See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) §4 and the issue drafts. The most im
 ## Decisions awaiting approval
 
 1. The licence and the open-source option (M4).
-2. IP confirmation, including the CoNSTruct 2.0 terms (M3).
+2. Copyright ownership in writing and the legacy *Ghummoo* contributors (M3). The CoNSTruct 2.0 question is resolved: there are no restrictions.
 3. Committing and pushing this work; merging V0.1 into `main` (G1).
 4. Publishing the issue drafts (G8).
 5. Removing `/v01` and the scratch files (L2).

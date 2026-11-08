@@ -9,10 +9,11 @@
 
 | Area | Item | Status |
 | --- | --- | --- |
-| **Legal** | IP ownership confirmed by both owners (founders' agreement, legacy *Ghummoo* contributors) | 🔒 |
-| | CoNSTruct 2.0 rules checked for IP and licensing terms | 🧑 |
-| | Licence chosen and `LICENSE` added | 🔒 ([recommendation](LICENSING_RECOMMENDATION.md)) |
-| | `TRADEMARKS.md` (brand excluded from the code licence) | ⛔ (waits on the licence) |
+| **Legal** | Copyright ownership confirmed in writing by both owners (`shekhar-narayan-mishra`, `vedansha07`); legacy *Ghummoo* contributors checked | 🔒 |
+| | CoNSTruct 2.0 ownership terms | ✅ resolved: no restrictions (owners, 8 November 2026) |
+| | Licence chosen and `LICENSE` added | ✅ AGPL-3.0-only chosen; files prepared locally, waiting for a commit approval 🔒 |
+| | `TRADEMARKS.md` (brand excluded from the code licence) | ✅ prepared locally |
+| | GSAP is not GPL-compatible: replace it or add a §7 permission | 🔒 (issue medium/14) |
 | | DCO or CLA decision | 🔒 |
 | | Third-party licences reviewed (GSAP, the SSPL binary, Unsplash) | ✅ ([SECURITY_AUDIT.md §5](SECURITY_AUDIT.md)) |
 | **Security** | Git history scanned for secrets | ✅ none found |

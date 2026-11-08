@@ -1,15 +1,15 @@
 # GitHub issue roadmap
 
-*There are 30 drafts in `docs/github-issues/`, none published yet. Each came from a verified gap in the code, checked against the files it names. None was invented to reach a target count. Publishing instructions are in [GITHUB_ISSUE_PUBLICATION_GUIDE.md](GITHUB_ISSUE_PUBLICATION_GUIDE.md).*
+*There are 31 drafts in `docs/github-issues/`, none published yet. Each came from a verified gap in the code, checked against the files it names. None was invented to reach a target count. Publishing instructions are in [GITHUB_ISSUE_PUBLICATION_GUIDE.md](GITHUB_ISSUE_PUBLICATION_GUIDE.md).*
 
 ## Totals
 
 | Difficulty | Count | `good first issue` |
 | --- | --- | --- |
 | Easy | 14 | 8 |
-| Medium | 13 | 0 |
+| Medium | 14 | 0 |
 | Hard | 3 | 0 |
-| **Total** | **30** | **8** |
+| **Total** | **31** | **8** |
 
 ## All issues
 
@@ -42,6 +42,7 @@
 | medium/11 | Request IDs and structured request logging | backend, devops | | — |
 | medium/12 | Record a refund or acknowledgement when declining a paid booking | backend | | after medium/07 |
 | medium/13 | Make departure capacity edits atomic | backend | | after medium/07 |
+| medium/14 | Replace GSAP with CSS scroll-driven animations (AGPL compatibility) | frontend | | after medium/08 |
 | hard/01 | Extract the grounded extraction core into a package | ai, architecture | | **licence approval**; maintainer-led |
 | hard/02 | Evaluation harness for AI Package Studio | ai, testing | | **data-consent decision**; best after hard/01 |
 | hard/03 | Email notifications and password reset | backend | | **choice of email provider** |
@@ -67,8 +68,9 @@
 
 **Frontend track:**
 1. medium/08;
-2. easy/09;
-3. easy/08, coordinated with easy/09 on `lib/auth.jsx`.
+2. medium/14 (removes GSAP, the licensing item L9);
+3. easy/09;
+4. easy/08, coordinated with easy/09 on `lib/auth.jsx`.
 
 **Uploads:** easy/03 and medium/04 both edit `routes/uploads.js`. Do easy/03 first, or fold it into medium/04.
 

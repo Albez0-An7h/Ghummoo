@@ -8,7 +8,7 @@ These facts constrain every option. Evidence is in [PROJECT_AUDIT.md](PROJECT_AU
 
 - The GitHub repository `shekhar-narayan-mishra/Ghummoo` is **already public**, with full history on four branches, and has **one public fork**, owned by the collaborator `vedansha07`.
 - There is **no licence**, so others may read the code but have no right to copy, modify or redistribute it.
-- The project started as a competition entry (CoNSTruct 2.0) on top of an earlier project (*Ghummoo*). Its intellectual-property position must be confirmed before anything is licensed.
+- The project was built on an earlier project (*Ghummoo*). Whether anyone else contributed to that code, and how the two owners hold the copyright, must be confirmed before anything is licensed. (The CoNSTruct 2.0 competition carries no ownership restrictions, as confirmed by the owners.)
 
 So the decision is not "should we open-source the startup?" The decision is **what to license, under which terms, and what to move out of public view from now on.**
 
@@ -50,7 +50,7 @@ None of category B is in the repository today. [PROPRIETARY_BOUNDARIES.md](PROPR
 | Item | Question to resolve |
 | --- | --- |
 | **The whole marketplace application** (`server/`, `client/`) | License it at all? Under which licence (§4)? |
-| **Code written for CoNSTruct 2.0 and the legacy *Ghummoo* project** (`backup/ghummoo-legacy`, commits before `56ad883`) | Do the competition rules claim rights or require a licence? Did anyone other than the committer write any of it (team members, course work)? |
+| **Code from the legacy *Ghummoo* project** (`backup/ghummoo-legacy`, commits before `56ad883`) | Did anyone other than the committer write any of it (team members, course work)? |
 | **Brand assets**: the "Ghumo AI" name and logo, and the custom landmark and landscape illustrations (`client/src/scenes/`) | Normally excluded from a code licence and kept as trademarks or brand art. Decide explicitly |
 | **Editorial content**: Explore India copy (`server/src/content/india.js`, `client/src/v01/data/india.generated.json`) | Was it written by the founders? It could be licensed CC BY 4.0, or kept all-rights-reserved |
 | **Third-party photos** (Unsplash URLs in `server/src/seedData.js` and `client/src/v01/data/packages.js`) | They cannot be relicensed. Keep them hotlinked and outside the licence grant |
@@ -88,7 +88,7 @@ These steps happen only after approval.
 1. **Now:**
    - Add the licence the owners choose.
    - Add a trademark and brand notice.
-   - Confirm the CoNSTruct and legacy IP position.
+   - Confirm copyright ownership in writing and check the legacy *Ghummoo* contributors.
 2. **Then:**
    - Publish the contributor infrastructure added in this audit: CI, templates, CONTRIBUTING and the issue drafts.
 3. **Then:**
