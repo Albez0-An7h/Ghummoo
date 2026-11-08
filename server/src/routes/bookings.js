@@ -34,7 +34,8 @@ function validateTravelers(list, seats) {
 // POST /api/bookings — create a booking request and hold seats atomically.
 router.post('/', asyncHandler(async (req, res) => {
   if (req.user.role !== 'traveler') throw forbidden('Please use a traveller account to book trips');
-  const { departureId, contact = {}, specialRequests } = req.body || {};
+  const { departureId, specialRequests } = req.body || {};
+  const contact = req.body?.contact && typeof req.body.contact === 'object' ? req.body.contact : {};
   const seats = Number(req.body.seats);
   if (!departureId) throw badRequest('Please choose a departure');
   if (!Number.isInteger(seats) || seats < 1 || seats > MAX_SEATS) throw badRequest(`You can book between 1 and ${MAX_SEATS} seats`);

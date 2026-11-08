@@ -13,6 +13,10 @@ const errorHandler = (err, req, res, next) => { // eslint-disable-line no-unused
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({ success: false, message: 'Image must be smaller than 5 MB' });
   }
+  // Other upload errors (wrong field name, more than one file) are the client's mistake, not a 500.
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ success: false, message: 'Upload one image in the "image" field' });
+  }
   if (err.type === 'entity.too.large') {
     return res.status(413).json({ success: false, message: 'Request is too large' });
   }

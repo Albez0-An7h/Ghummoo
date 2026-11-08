@@ -64,11 +64,27 @@ const str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 const arr = (v) => (Array.isArray(v) ? v.map((x) => (typeof x === 'string' ? x.trim() : x)).filter(Boolean) : []);
 const int = (v) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Math.round(Number(v)) : null);
 
-// Grounding check: a number the model returns must literally appear in the source text.
+// Every number written in the text, as whole tokens: "₹12,999" → 12999, "1,25,000" → 125000,
+// "15k" → 15 and 15000, "1.2 lakh" → 1.2 and 120000, "5D/4N" → 5 and 4.
+function numbersInText(text) {
+  const found = new Set();
+  const re = /(\d+(?:,\d+)*(?:\.\d+)?)(?:\s*(k|lakhs?|lacs?)\b)?/gi;
+  for (const m of String(text || '').matchAll(re)) {
+    const value = Number(m[1].replace(/,/g, ''));
+    if (!Number.isFinite(value)) continue;
+    found.add(value);
+    const unit = (m[2] || '').toLowerCase();
+    if (unit === 'k') found.add(Math.round(value * 1000));
+    else if (unit) found.add(Math.round(value * 100000));
+  }
+  return found;
+}
+
+// Grounding check: a number the model returns must appear in the source text as a whole
+// number, not merely as a run of digits inside a bigger one (500 is not grounded by "15,000").
 function numberInText(n, text) {
-  if (n == null) return false;
-  const digits = text.replace(/[,\s]/g, '');
-  return digits.includes(String(n)) || text.toLowerCase().includes(`${n / 1000}k`);
+  if (n == null || !Number.isFinite(Number(n))) return false;
+  return numbersInText(text).has(Number(n));
 }
 
 function normalise(raw, text) {
@@ -148,4 +164,4 @@ async function extractPackage(text) {
   return { ...normalise(data || {}, text), provider, model };
 }
 
-module.exports = { extractPackage, status, normalise };
+module.exports = { extractPackage, status, normalise, numberInText };

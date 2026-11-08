@@ -14,6 +14,8 @@ const env = {
   MONGODB_URI: '',
   EMBEDDED_DB_PATH: dbPath,
   JWT_SECRET: 'e2e-only-secret',
+  // Production seeding gives the demo admin a random password unless one is set (server/src/seedData.js).
+  DEMO_ADMIN_PASSWORD: 'GhumoDemo#2026',
   CLIENT_URL: `http://127.0.0.1:${process.env.E2E_APP_PORT || '5198'}`,
   AI_PROVIDER: 'openai',
   OPENAI_API_KEY: 'e2e-stub-key',

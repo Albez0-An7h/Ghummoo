@@ -8,8 +8,8 @@ const { ensureGroup } = require('../services/groups');
 const { verifyToken } = require('../middleware/auth');
 const { requireRole, loadOperator } = require('../middleware/roleGuard');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { badRequest, notFoundErr, conflict, forbidden } = require('../utils/http');
-const { uniqueSlug, toList, escapeRegex } = require('../utils/text');
+const { badRequest, notFoundErr, conflict, forbidden, queryFilter } = require('../utils/http');
+const { uniqueSlug, toList, escapeRegex, csvCell } = require('../utils/text');
 const { releaseSeats, adjustConfirmedSeats } = require('../services/seats');
 
 router.use(verifyToken, requireRole('operator'));
@@ -467,11 +467,13 @@ router.delete('/announcements/:id', loadOperator(), asyncHandler(async (req, res
 
 async function bookingQuery(req) {
   const q = { operator: req.operator._id };
-  if (req.query.status) q.status = req.query.status;
-  if (req.query.departure) q.departure = req.query.departure;
-  if (req.query.package) q.package = req.query.package;
-  if (req.query.q) {
-    const rx = new RegExp(escapeRegex(req.query.q), 'i');
+  for (const f of ['status', 'departure', 'package']) {
+    const v = queryFilter(req.query, f);
+    if (v) q[f] = v;
+  }
+  const text = queryFilter(req.query, 'q');
+  if (text) {
+    const rx = new RegExp(escapeRegex(text), 'i');
     q.$or = [{ reference: rx }, { 'contact.name': rx }, { 'contact.email': rx }, { 'contact.phone': rx }, { 'travelers.fullName': rx }];
   }
   return q;
@@ -492,15 +494,9 @@ router.get('/bookings', loadOperator(), asyncHandler(async (req, res) => {
   res.json({ success: true, data: items.map((b) => ({ ...b, amountReceived: pm.get(String(b._id)) || 0 })) });
 }));
 
-const csvCell = (v) => {
-  let s = v == null ? '' : String(v);
-  if (/^[=+\-@]/.test(s)) s = `'${s}`; // prevent spreadsheet formula injection
-  return `"${s.replace(/"/g, '""')}"`;
-};
-
 router.get('/bookings/export.csv', loadOperator(), asyncHandler(async (req, res) => {
   const q = await bookingQuery(req);
-  if (!req.query.status) q.status = { $in: ['requested', 'confirmed'] };
+  if (!q.status) q.status = { $in: ['requested', 'confirmed'] };
   const items = await Booking.find(q).sort({ createdAt: 1 }).populate('package', 'title').populate('departure', 'startDate').lean();
   const rows = [['Reference', 'Status', 'Trip', 'Departure', 'Traveller', 'Age', 'Gender', 'Traveller phone', 'Emergency contact', 'Booking contact', 'Contact phone', 'Contact email']];
   for (const b of items) {

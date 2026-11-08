@@ -14,10 +14,14 @@ async function apiLogin(request, email, password = DEMO_PASSWORD) {
   return (await res.json()).data;
 }
 
+// Waits for the sign-in response, so a navigation straight afterwards can't cancel the request.
 async function uiLogin(page, email, password = DEMO_PASSWORD) {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
-  await page.locator('main form button[type=submit]').click();
+  await Promise.all([
+    page.waitForResponse((r) => r.url().includes('/api/auth/login') && r.request().method() === 'POST'),
+    page.locator('main form button[type=submit]').click(),
+  ]);
 }
 
 // Page has no horizontal overflow (allows 1px rounding).

@@ -59,6 +59,7 @@ router.post('/trips/:slug/ask', aiLimiter, optionalAuth, asyncHandler(async (req
   if (question.length < 3) throw badRequest('Ask a question about this trip');
   if (question.length > 300) throw badRequest('Please keep questions under 300 characters');
   const pkg = await TripPackage.findOne({ slug: req.params.slug }).lean();
+  if (!pkg) throw notFoundErr('Trip not found');
   const operator = pkg && await Operator.findById(pkg.operator).lean();
   const isPublic = pkg && pkg.status === 'published' && operator?.status === 'approved';
   const isOwner = pkg && req.user && operator && String(operator.owner) === String(req.user._id);
