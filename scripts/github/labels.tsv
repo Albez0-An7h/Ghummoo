@@ -1,0 +1,15 @@
+good first issue	7057ff	Small, well-scoped and suitable for first-time contributors
+help wanted	008672	Maintainers welcome outside help
+bug	d73a4a	Something does not work as documented
+enhancement	a2eeef	Improvement to existing behaviour
+documentation	0075ca	Documentation only
+testing	fbca04	Tests and test infrastructure
+backend	5319e7	server/
+frontend	F26A2E	client/
+ai	FBBF24	AI Package Studio, discovery, grounding
+architecture	0e8a16	Structural change across modules
+security	b60205	Security hardening
+devops	c5def5	CI, Docker, deployment
+easy	c2e0c6	A few hours; one area of the code
+medium	fef2c0	A day or more; several modules
+hard	f9d0c4	Multi-day; design discussion first

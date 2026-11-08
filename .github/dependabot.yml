@@ -1,0 +1,29 @@
+# Weekly dependency updates, grouped to keep PR volume low. Target staging so updates go
+# through the same integration branch as contributions.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /server
+    target-branch: staging
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      server-minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: npm
+    directory: /client
+    target-branch: staging
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      client-minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: npm
+    directory: /
+    target-branch: staging
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 2
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: staging
+    schedule: { interval: monthly }

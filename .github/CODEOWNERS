@@ -1,0 +1,9 @@
+# Code owners are asked to review PRs that touch these paths. Both maintainers are listed, so
+# either can review; with "Require review from Code Owners" on, one code-owner approval is needed.
+# GitHub ignores an owner who lacks write access to the repository.
+*                                   @shekhar-narayan-mishra @vedansha07
+/server/src/services/seats.js       @shekhar-narayan-mishra @vedansha07
+/server/src/routes/bookings.js      @shekhar-narayan-mishra @vedansha07
+/server/src/middleware/             @shekhar-narayan-mishra @vedansha07
+/server/src/services/ai/            @shekhar-narayan-mishra @vedansha07
+/.github/                           @shekhar-narayan-mishra @vedansha07

@@ -1,0 +1,101 @@
+# Runs on every pull request to main or staging and on pushes to them.
+# Jobs: install → lint → unit/API tests → production build → dependency audit, then e2e.
+name: CI
+
+on:
+  pull_request:
+    branches: [main, staging]
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+      # The server tests start an embedded MongoDB; cache its downloaded binary.
+      - uses: actions/cache@v4
+        with:
+          path: server/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('server/package-lock.json') }}
+      - name: Install
+        run: |
+          npm ci
+          npm ci --prefix server
+          npm ci --prefix client
+      - name: Lint
+        run: npm run lint
+      - name: Unit and API tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Dependency audit (production dependencies, high and above)
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm audit --omit=dev --audit-level=high --prefix server
+          npm audit --omit=dev --audit-level=high --prefix client
+
+  e2e:
+    name: End-to-end (Playwright)
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+      - uses: actions/cache@v4
+        with:
+          path: server/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('server/package-lock.json') }}
+      - name: Install
+        run: |
+          npm ci
+          npm ci --prefix server
+          npm ci --prefix client
+          npx playwright install --with-deps chromium
+      # Uses a temporary embedded database and a local AI stub. No secrets are needed.
+      - name: Run e2e suite
+        run: npm run test:e2e
+      - name: Upload failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
